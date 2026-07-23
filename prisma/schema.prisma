@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  users       User[]
+}
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  password      String
+  firstName     String
+  lastName      String
+  phone         String?
+  avatar        String?
+  isActive      Boolean    @default(true)
+  roleId        String
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deletedAt     DateTime?
+  activities    Activity[]
+  assignedDeals Deal[]     @relation("AssignedDeals")
+  assignedLeads Lead[]     @relation("AssignedLeads")
+  createdLeads  Lead[]     @relation("CreatedLeads")
+  notes         Note[]
+  assignedTasks Task[]     @relation("AssignedTasks")
+  createdTasks  Task[]     @relation("CreatedTasks")
+  role          Role       @relation(fields: [roleId], references: [id])
+}
+
+model Company {
+  id        String    @id @default(uuid())
+  name      String
+  website   String?
+  industry  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  contacts  Contact[]
+  deals     Deal[]
+}
+
+model Contact {
+  id        String    @id @default(uuid())
+  firstName String
+  lastName  String
+  email     String?   @unique
+  phone     String?
+  companyId String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  company   Company?  @relation(fields: [companyId], references: [id])
+  deals     Deal[]
+  leads     Lead[]
+  notes     Note[]
+}
+
+model Lead {
+  id           String      @id @default(uuid())
+  title        String
+  status       LeadStatus  @default(NEW)
+  source       LeadSource?
+  value        Float?
+  contactId    String?
+  assignedToId String?
+  createdById  String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime?
+  assignedTo   User?       @relation("AssignedLeads", fields: [assignedToId], references: [id])
+  contact      Contact?    @relation(fields: [contactId], references: [id])
+  createdBy    User?       @relation("CreatedLeads", fields: [createdById], references: [id])
+  notes        Note[]
+  tasks        Task[]
+}
+
+model PipelineStage {
+  id    String @id @default(uuid())
+  name  String
+  order Int
+  deals Deal[]
+}
+
+model Deal {
+  id                String        @id @default(uuid())
+  title             String
+  value             Float?
+  probability       Int?
+  expectedCloseDate DateTime?
+  status            DealStatus    @default(OPEN)
+  stageId           String
+  contactId         String?
+  companyId         String?
+  assignedToId      String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+  assignedTo        User?         @relation("AssignedDeals", fields: [assignedToId], references: [id])
+  company           Company?      @relation(fields: [companyId], references: [id])
+  contact           Contact?      @relation(fields: [contactId], references: [id])
+  stage             PipelineStage @relation(fields: [stageId], references: [id])
+  notes             Note[]
+  tasks             Task[]
+}
+
+model Task {
+  id           String     @id @default(uuid())
+  title        String
+  description  String?
+  status       TaskStatus @default(PENDING)
+  priority     Priority   @default(MEDIUM)
+  dueDate      DateTime?
+  assignedToId String?
+  createdById  String?
+  leadId       String?
+  dealId       String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+  assignedTo   User?      @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  createdBy    User?      @relation("CreatedTasks", fields: [createdById], references: [id])
+  deal         Deal?      @relation(fields: [dealId], references: [id])
+  lead         Lead?      @relation(fields: [leadId], references: [id])
+}
+
+model Note {
+  id          String   @id @default(uuid())
+  content     String
+  createdById String?
+  contactId   String?
+  leadId      String?
+  dealId      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  contact     Contact? @relation(fields: [contactId], references: [id])
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+  deal        Deal?    @relation(fields: [dealId], references: [id])
+  lead        Lead?    @relation(fields: [leadId], references: [id])
+}
+
+model Activity {
+  id          String   @id @default(uuid())
+  action      String
+  description String?
+  entityType  String
+  entityId    String
+  userId      String?
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id])
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  UNQUALIFIED
+  CONVERTED
+}
+
+enum LeadSource {
+  WEBSITE
+  REFERRAL
+  INDIAMART
+  WHATSAPP
+  EMAIL
+  COLD_CALL
+  OTHER
+}
+
+enum DealStatus {
+  OPEN
+  WON
+  LOST
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
