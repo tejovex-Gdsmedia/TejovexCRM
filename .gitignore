@@ -3,3 +3,10 @@ dist/
 .env
 *.log
 /src/generated/prisma
+
+
+# Prisma AI agent files - not needed
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
