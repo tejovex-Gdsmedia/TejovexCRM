@@ -2,15 +2,31 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config/env';
 import prisma from './config/database';
+import { errorHandler } from './middleware/errorhandler';
+import authRoutes from './routes/auth.routes';
+import contactRoutes from './routes/contact.routes';
+import companyRoutes from './routes/company.routes';
+import leadRoutes from './routes/lead.routes';
+import dealRoutes from './routes/deal.routes';
+import taskRoutes from './routes/task.routes';
+import noteRoutes from './routes/note.routes';
 
 const app = express();
 
-// Middleware — runs on every request
-app.use(cors());                    // allow frontend to connect
-app.use(express.json());            // parse JSON request bodies
+app.use(cors());
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check route — lets you verify server is running
+// Routes
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/contacts', contactRoutes);
+app.use('/api/v1/companies', companyRoutes);
+app.use('/api/v1/leads', leadRoutes);
+app.use('/api/v1/deals', dealRoutes);
+app.use('/api/v1/tasks', taskRoutes);
+app.use('/api/v1/notes', noteRoutes);
+
+// Health check
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -19,20 +35,22 @@ app.get('/health', (req, res) => {
   });
 });
 
-// 404 handler — for any route that doesn't exist
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({ message: `Route ${req.url} not found` });
 });
 
-// Start server and test DB connection
+// Error handler
+app.use(errorHandler);
+
 async function main() {
   try {
     await prisma.$connect();
     console.log('✅ Database connected successfully');
-app.listen(config.port, () => {
-  console.log(`✅ Server running on http://localhost:${config.port}`);
-  console.log(`📋 Environment: ${config.nodeEnv}`);
-});
+    app.listen(config.port, () => {
+      console.log(`✅ Server running on http://localhost:${config.port}`);
+      console.log(`📋 Environment: ${config.nodeEnv}`);
+    });
   } catch (error) {
     console.error('❌ Database connection failed:', error);
     process.exit(1);
