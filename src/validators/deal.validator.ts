@@ -7,6 +7,7 @@ export const createDealSchema = z.object({
   expectedCloseDate: z.string().optional(),
   status: z.enum(['OPEN', 'WON', 'LOST']).optional(),
   stageId: z.string().min(1, 'Stage is required'),
+  contactName: z.string().optional(),
   contactId: z.string().optional(),
   companyId: z.string().optional(),
   assignedToId: z.string().optional(),
