@@ -4,7 +4,7 @@ import { CreateContactInput, UpdateContactInput } from '../validators/contact.va
 
 export class ContactService {
 
-  // Get all contacts
+  // Get all contacts — UNCHANGED
   async getAll(search?: string) {
     return prisma.contact.findMany({
       where: {
@@ -12,9 +12,9 @@ export class ContactService {
         ...(search && {
           OR: [
             { firstName: { contains: search, mode: 'insensitive' } },
-            { lastName: { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } },
-            { phone: { contains: search, mode: 'insensitive' } },
+            { lastName:  { contains: search, mode: 'insensitive' } },
+            { email:     { contains: search, mode: 'insensitive' } },
+            { phone:     { contains: search, mode: 'insensitive' } },
           ],
         }),
       },
@@ -23,15 +23,15 @@ export class ContactService {
     });
   }
 
-  // Get single contact
+  // Get single contact — UNCHANGED
   async getById(id: string) {
     const contact = await prisma.contact.findFirst({
       where: { id, deletedAt: null },
       include: {
         company: true,
-        leads: true,
-        deals: true,
-        notes: true,
+        leads:   true,
+        deals:   true,
+        notes:   true,
       },
     });
 
@@ -39,8 +39,9 @@ export class ContactService {
     return contact;
   }
 
-  // Create contact
+  // Create contact — CHANGED
   async create(data: CreateContactInput) {
+    // Email duplicate check — KEPT
     if (data.email) {
       const existing = await prisma.contact.findUnique({
         where: { email: data.email },
@@ -48,24 +49,75 @@ export class ContactService {
       if (existing) throw new AppError('Email already exists', 400);
     }
 
+    // ── NEW: find or create company from typed name ───────────
+    let companyId = data.companyId;
+
+    if (data.companyName && !companyId) {
+      const trimmedName = data.companyName.trim();
+
+      const existingCompany = await prisma.company.findFirst({
+        where: {
+          name: { equals: trimmedName, mode: 'insensitive' },
+          deletedAt: null,
+        },
+      });
+
+      companyId = existingCompany
+        ? existingCompany.id
+        : (await prisma.company.create({ data: { name: trimmedName } })).id;
+    }
+    // ─────────────────────────────────────────────────────────
+
+    // Explicit fields instead of spreading data (companyName must be excluded)
     return prisma.contact.create({
-      data,
+      data: {
+        firstName: data.firstName,
+        lastName:  data.lastName,
+        email:     data.email,
+        phone:     data.phone,
+        companyId,
+      },
       include: { company: true },
     });
   }
 
-  // Update contact
+  // Update contact — CHANGED
   async update(id: string, data: UpdateContactInput) {
     await this.getById(id);
 
+    // ── NEW: find or create company from typed name ───────────
+    let companyId = data.companyId;
+
+    if (data.companyName && !companyId) {
+      const trimmedName = data.companyName.trim();
+
+      const existingCompany = await prisma.company.findFirst({
+        where: {
+          name: { equals: trimmedName, mode: 'insensitive' },
+          deletedAt: null,
+        },
+      });
+
+      companyId = existingCompany
+        ? existingCompany.id
+        : (await prisma.company.create({ data: { name: trimmedName } })).id;
+    }
+    // ─────────────────────────────────────────────────────────
+
     return prisma.contact.update({
       where: { id },
-      data,
+      data: {
+        firstName: data.firstName,
+        lastName:  data.lastName,
+        email:     data.email,
+        phone:     data.phone,
+        companyId,
+      },
       include: { company: true },
     });
   }
 
-  // Soft delete contact
+  // Soft delete — UNCHANGED
   async delete(id: string) {
     await this.getById(id);
 
