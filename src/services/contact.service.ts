@@ -39,70 +39,75 @@ export class ContactService {
     return contact;
   }
 
-  // Create contact — CHANGED
-  async create(data: CreateContactInput) {
-    // Email duplicate check — KEPT
-    if (data.email) {
-      const existing = await prisma.contact.findUnique({
-        where: { email: data.email },
-      });
-      if (existing) throw new AppError('Email already exists', 400);
-    }
+  // ── NEW: private helper — replaces duplicate company logic in create() and update()
+  private async resolveCompanyId(
+    data: CreateContactInput | UpdateContactInput
+  ): Promise<string | undefined> {
+    if (data.companyId) return data.companyId;
 
-    // ── NEW: find or create company from typed name ───────────
-    let companyId = data.companyId;
-
-    if (data.companyName && !companyId) {
+    if (data.companyName) {
       const trimmedName = data.companyName.trim();
-
-      const existingCompany = await prisma.company.findFirst({
+      const existing = await prisma.company.findFirst({
         where: {
           name: { equals: trimmedName, mode: 'insensitive' },
           deletedAt: null,
         },
       });
-
-      companyId = existingCompany
-        ? existingCompany.id
+      return existing
+        ? existing.id
         : (await prisma.company.create({ data: { name: trimmedName } })).id;
     }
-    // ─────────────────────────────────────────────────────────
 
-    // Explicit fields instead of spreading data (companyName must be excluded)
+    return undefined;
+  }
+
+  // Create contact — CHANGED
+  async create(data: CreateContactInput) {
+    if (data.email) {
+      // CHANGED: findUnique → findFirst with deletedAt: null (only checks active contacts)
+      const activeContact = await prisma.contact.findFirst({
+        where: { email: data.email, deletedAt: null },
+      });
+      if (activeContact) throw new AppError('Email already exists', 400);
+
+      // NEW: if soft-deleted contact exists with same email → restore it
+      const deletedContact = await prisma.contact.findFirst({
+        where: { email: data.email, deletedAt: { not: null } },
+      });
+
+      if (deletedContact) {
+        return prisma.contact.update({
+          where: { id: deletedContact.id },
+          data: {
+            firstName: data.firstName,
+            lastName:  data.lastName,
+            phone:     data.phone,
+            companyId: await this.resolveCompanyId(data),
+            deletedAt: null,         // brings it back
+            updatedAt: new Date(),
+          },
+          include: { company: true },
+        });
+      }
+    }
+
+    // Normal create — no conflict at all
+    // CHANGED: inline company logic replaced with resolveCompanyId helper
     return prisma.contact.create({
       data: {
         firstName: data.firstName,
         lastName:  data.lastName,
         email:     data.email,
         phone:     data.phone,
-        companyId,
+        companyId: await this.resolveCompanyId(data),
       },
       include: { company: true },
     });
   }
 
-  // Update contact — CHANGED
+  // Update contact — CHANGED: inline company logic replaced with resolveCompanyId helper
   async update(id: string, data: UpdateContactInput) {
     await this.getById(id);
-
-    // ── NEW: find or create company from typed name ───────────
-    let companyId = data.companyId;
-
-    if (data.companyName && !companyId) {
-      const trimmedName = data.companyName.trim();
-
-      const existingCompany = await prisma.company.findFirst({
-        where: {
-          name: { equals: trimmedName, mode: 'insensitive' },
-          deletedAt: null,
-        },
-      });
-
-      companyId = existingCompany
-        ? existingCompany.id
-        : (await prisma.company.create({ data: { name: trimmedName } })).id;
-    }
-    // ─────────────────────────────────────────────────────────
 
     return prisma.contact.update({
       where: { id },
@@ -111,7 +116,7 @@ export class ContactService {
         lastName:  data.lastName,
         email:     data.email,
         phone:     data.phone,
-        companyId,
+        companyId: await this.resolveCompanyId(data),
       },
       include: { company: true },
     });
