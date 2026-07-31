@@ -23,11 +23,10 @@ router.post('/sync', async (req: Request, res: Response, next: NextFunction) => 
     const { stages } = req.body;
     // stages = ["Prospecting", "Demo", "Closed"] — array of strings from frontend
 
-    if (!Array.isArray(stages) || stages.length === 0) {
-      res.status(400).json({ success: false, message: 'stages array is required and cannot be empty' });
-      return;
-    }
-
+    if (!Array.isArray(stages)) {
+     res.status(400).json({ success: false, message: 'stages must be an array' });
+  return;
+}
     // Delete all existing stages
     await prisma.pipelineStage.deleteMany({});
 
