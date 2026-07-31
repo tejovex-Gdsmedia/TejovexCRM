@@ -71,7 +71,8 @@ model Lead {
   title        String
   status       LeadStatus  @default(NEW)
   source       LeadSource?
-  value        Float?
+  contactName    String?
+  assignedToName String?
   contactId    String?
   assignedToId String?
   createdById  String?

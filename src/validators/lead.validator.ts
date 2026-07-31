@@ -7,6 +7,8 @@ export const createLeadSchema = z.object({
   value: z.number().optional(),
   contactId: z.string().optional(),
   assignedToId: z.string().optional(),
+  contactName: z.string().optional(),
+  assignedToName: z.string().optional(),
 });
 
 export const updateLeadSchema = createLeadSchema.partial();
