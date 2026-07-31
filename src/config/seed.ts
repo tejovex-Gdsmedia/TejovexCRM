@@ -14,30 +14,9 @@ async function seedRoles() {
   console.log('✅ Roles seeded successfully');
 }
 
-async function seedPipelineStages() {
-  const stages = [
-    { name: 'New Lead', order: 1 },
-    { name: 'Contacted', order: 2 },
-    { name: 'Proposal Sent', order: 3 },
-    { name: 'Negotiation', order: 4 },
-    { name: 'Won', order: 5 },
-    { name: 'Lost', order: 6 },
-  ];
-
-  for (const stage of stages) {
-    await prisma.pipelineStage.upsert({
-      where: { id: stage.name },
-      update: {},
-      create: stage,
-    });
-  }
-
-  console.log('✅ Pipeline stages seeded successfully');
-}
-
 async function main() {
   await seedRoles();
-  await seedPipelineStages();
+  // Pipeline stages are user-managed — NOT seeded here
   await prisma.$disconnect();
 }
 
