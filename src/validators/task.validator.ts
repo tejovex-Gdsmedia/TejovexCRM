@@ -7,6 +7,7 @@ export const createTaskSchema = z.object({
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional(),
   dueDate: z.string().optional(),
   assignedToId: z.string().optional(),
+  assignedToName: z.string().optional(),
   leadId: z.string().optional(),
   dealId: z.string().optional(),
 });

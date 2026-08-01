@@ -124,6 +124,7 @@ model Task {
   status       TaskStatus @default(PENDING)
   priority     Priority   @default(MEDIUM)
   dueDate      DateTime?
+  assignedToName String?
   assignedToId String?
   createdById  String?
   leadId       String?
