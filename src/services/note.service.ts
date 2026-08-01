@@ -116,16 +116,10 @@ export class NoteService {
     });
   }
 
-  async delete(id: string, userId: string) {
-    const note = await this.getById(id);
-
-    // Only the person who created the note can delete it
-    if (note.createdById !== userId) {
-      throw new AppError('You can only delete your own notes', 403);
-    }
-
-    return prisma.note.delete({ where: { id } });
-  }
+async delete(id: string, userId: string) {
+  const note = await this.getById(id);
+  return prisma.note.delete({ where: { id } });
+}
 }
 
 export const noteService = new NoteService();
