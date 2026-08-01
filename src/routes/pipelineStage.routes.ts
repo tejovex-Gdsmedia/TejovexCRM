@@ -39,16 +39,22 @@ router.post('/sync', async (req: Request, res: Response, next: NextFunction) => 
       }
     }
 
-    // Delete all existing stages
-    await prisma.pipelineStage.deleteMany({});
+// Only delete stages that are being removed
+    for (const stage of removedStages) {
+      await prisma.pipelineStage.delete({ where: { id: stage.id } });
+    }
 
-    // Re-insert only what frontend sent
-    await prisma.pipelineStage.createMany({
-      data: stages.map((name: string, index: number) => ({
-        name,
-        order: index + 1,
-      })),
-    });
+    // Add new stages that don't exist yet
+    const existingNames = existingStages.map(s => s.name);
+    const newStages = stages.filter((name: string) => !existingNames.includes(name));
+    if (newStages.length > 0) {
+      await prisma.pipelineStage.createMany({
+        data: newStages.map((name: string, index: number) => ({
+          name,
+          order: existingStages.length + index + 1,
+        })),
+      });
+    }
 
     const updated = await prisma.pipelineStage.findMany({
       orderBy: { order: 'asc' },
