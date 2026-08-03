@@ -6,9 +6,8 @@ import { z } from "zod";
 import { loginUser, registerUser } from "../../api/auth.api";
 import { useAuth } from "../../context/AuthContext";
 
-// --- Zod Schemas ---
 const loginSchema = z.object({
-  email: z.string().email("Invalid email"),
+  email:    z.string().email("Invalid email"),
   password: z.string().min(6, "Minimum 6 characters"),
 });
 
@@ -17,13 +16,13 @@ const registerSchema = z.object({
   lastName:  z.string().min(1, "Required"),
   email:     z.string().email("Invalid email"),
   password:  z.string().min(6, "Minimum 6 characters"),
-  phone:     z.string().optional(),
+  phone:     z.string().min(10, "Phone number is required"),
+  role:      z.enum(["ADMIN", "USER"], { required_error: "Please select a role" }),
 });
 
 type LoginForm    = z.infer<typeof loginSchema>;
 type RegisterForm = z.infer<typeof registerSchema>;
 
-// --- Reusable Field component ---
 function Field({
   label, error, children,
 }: {
@@ -44,9 +43,8 @@ function Field({
 
 const inputCls =
   "rounded-lg bg-gray-100 px-3 py-2.5 text-sm outline-none ring-1 ring-gray-200 " +
-  "focus:ring-brand-500 placeholder:text-gray-400 transition-all";
+  "focus:ring-yellow-500 placeholder:text-gray-400 transition-all";
 
-// --- Login Form ---
 function LoginForm() {
   const { login } = useAuth();
   const navigate  = useNavigate();
@@ -71,16 +69,13 @@ function LoginForm() {
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-1 text-lg font-semibold text-gray-800">Login</h2>
-      <p className="mb-5 text-xs text-gray-400">
-        POST /auth/login — returns a JWT token stored client-side
-      </p>
+      <h2 className="mb-5 text-lg font-semibold text-gray-800">Login</h2>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <Field label="Email" error={errors.email?.message}>
           <input
             {...register("email")}
-            placeholder="sujal@tejovex.com"
+            placeholder="Enter your email"
             className={inputCls}
           />
         </Field>
@@ -89,7 +84,7 @@ function LoginForm() {
           <input
             {...register("password")}
             type="password"
-            placeholder="••••••••"
+            placeholder="Enter your password"
             className={inputCls}
           />
         </Field>
@@ -103,8 +98,8 @@ function LoginForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="mt-1 rounded-lg bg-brand-600 py-2.5 text-sm font-semibold
-                     text-white hover:bg-brand-700 disabled:opacity-60 transition-colors"
+          className="mt-1 rounded-lg bg-yellow-600 py-2.5 text-sm font-semibold
+                     text-white hover:bg-yellow-700 disabled:opacity-60 transition-colors"
         >
           {isSubmitting ? "Logging in…" : "Login →"}
         </button>
@@ -113,10 +108,9 @@ function LoginForm() {
   );
 }
 
-// --- Register Form ---
 function RegisterForm() {
   const [serverError, setServerError] = useState("");
-  const [successMsg, setSuccessMsg]   = useState("");
+  const [successMsg,  setSuccessMsg]  = useState("");
 
   const {
     register,
@@ -138,24 +132,21 @@ function RegisterForm() {
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-1 text-lg font-semibold text-gray-800">Register</h2>
-      <p className="mb-5 text-xs text-gray-400">
-        POST /auth/register — creates a new user account
-      </p>
+      <h2 className="mb-5 text-lg font-semibold text-gray-800">Register</h2>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3">
           <Field label="First Name" error={errors.firstName?.message}>
             <input
               {...register("firstName")}
-              placeholder="Sujal"
+              placeholder="Enter first name"
               className={inputCls}
             />
           </Field>
           <Field label="Last Name" error={errors.lastName?.message}>
             <input
               {...register("lastName")}
-              placeholder="Das"
+              placeholder="Enter last name"
               className={inputCls}
             />
           </Field>
@@ -164,7 +155,7 @@ function RegisterForm() {
         <Field label="Email" error={errors.email?.message}>
           <input
             {...register("email")}
-            placeholder="sujal@tejovex.com"
+            placeholder="Enter email address"
             className={inputCls}
           />
         </Field>
@@ -173,25 +164,29 @@ function RegisterForm() {
           <input
             {...register("password")}
             type="password"
-            placeholder="••••••••"
+            placeholder="Enter password"
             className={inputCls}
           />
         </Field>
 
-        <Field label="Phone (optional)" error={errors.phone?.message}>
+        <Field label="Phone *" error={errors.phone?.message}>
           <input
             {...register("phone")}
-            placeholder="+91 98765 43210"
+            placeholder="Enter phone number"
             className={inputCls}
           />
         </Field>
 
-        <Field label="Role">
-          <input
-            value="Assigned via roleId from Role table"
-            disabled
-            className={`${inputCls} cursor-not-allowed text-gray-400`}
-          />
+        <Field label="Role *" error={errors.role?.message}>
+          <select
+            {...register("role")}
+            className={inputCls}
+            defaultValue=""
+          >
+            <option value="" disabled>Select a role</option>
+            <option value="ADMIN">Admin</option>
+            <option value="USER">User</option>
+          </select>
         </Field>
 
         {serverError && (
@@ -208,8 +203,8 @@ function RegisterForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="mt-1 rounded-lg border border-brand-600 py-2.5 text-sm
-                     font-semibold text-brand-700 hover:bg-brand-50
+          className="mt-1 rounded-lg border border-yellow-600 py-2.5 text-sm
+                     font-semibold text-yellow-700 hover:bg-yellow-50
                      disabled:opacity-60 transition-colors"
         >
           {isSubmitting ? "Registering…" : "Register Account"}
@@ -219,30 +214,21 @@ function RegisterForm() {
   );
 }
 
-// --- Main Auth Page (combines both) ---
 export default function AuthPage() {
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Auth &amp; Profile</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Login, Register, and current user profile endpoints.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {["POST /auth/register", "POST /auth/login", "GET /auth/me"].map((e) => (
-            <span
-              key={e}
-              className="rounded-md bg-gray-200 px-2.5 py-1 font-mono text-[11px] text-gray-600"
-            >
-              {e}
-            </span>
-          ))}
+    <div className="min-h-screen bg-gray-100 p-6 flex items-center justify-center">
+      <div className="w-full max-w-4xl">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold text-gray-800">Tejovex CRM</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Welcome back! Please login or create an account.
+          </p>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <RegisterForm />
-        <LoginForm />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <RegisterForm />
+          <LoginForm />
+        </div>
       </div>
     </div>
   );

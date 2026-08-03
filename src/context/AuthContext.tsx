@@ -15,8 +15,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(
+  const [user,    setUser]    = useState<User | null>(null);
+  const [token,   setToken]   = useState<string | null>(
     localStorage.getItem("token")
   );
   const [loading, setLoading] = useState(true);
@@ -24,13 +24,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (token) {
       getProfile()
-        .then((res) => setUser(res.data.user ?? res.data))
-        .catch(() => {
-          localStorage.removeItem("token");
-          setToken(null);
+        .then((res) => {
+          const userData =
+            res.data?.data?.user ??
+            res.data?.data ??
+            res.data?.user ??
+            res.data;
+          setUser(userData);
+        })
+        .catch((err) => {
+          console.log("getProfile error:", err.response?.status, err.response?.data);
+          // Don't clear token — keep user logged in even if profile fails
+          setUser(null);
         })
         .finally(() => setLoading(false));
     } else {
+      setUser(null);
       setLoading(false);
     }
   }, [token]);
@@ -48,7 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, isAuthenticated: !!token, login, logout, loading }}
+      value={{
+        user,
+        token,
+        isAuthenticated: !!token,
+        login,
+        logout,
+        loading,
+      }}
     >
       {children}
     </AuthContext.Provider>

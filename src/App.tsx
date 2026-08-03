@@ -6,27 +6,33 @@ import AuthPage        from "./pages/auth/AuthPage";
 import Dashboard       from "./pages/dashboard/Dashboard";
 import Contacts        from "./pages/contacts/Contacts";
 import Companies       from "./pages/companies/Companies";
+import Notes           from "./pages/notes/Notes";
+import Leads           from "./pages/leads/Leads";
+import Deals           from "./pages/deals/Deals";
+import Tasks           from "./pages/tasks/Tasks";
+import Profile         from "./pages/profile/Profile";
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public */}
           <Route path="/login"    element={<AuthPage />} />
           <Route path="/register" element={<AuthPage />} />
 
-          {/* Protected — first checks auth, then shows sidebar layout */}
           <Route element={<ProtectedRoute />}>
             <Route element={<MainLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/contacts"  element={<Contacts />} />
               <Route path="/companies" element={<Companies />} />
-              <Route path="/profile"   element={<AuthPage />} />
+              <Route path="/leads"     element={<Leads />} />
+              <Route path="/deals"     element={<Deals />} />
+              <Route path="/tasks"     element={<Tasks />} />
+              <Route path="/notes"     element={<Notes />} />
+              <Route path="/profile"   element={<Profile />} />
             </Route>
           </Route>
 
-          {/* Fallback */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>

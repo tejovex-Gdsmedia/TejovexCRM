@@ -14,18 +14,23 @@ export interface RegisterPayload {
 }
 
 export interface AuthResponse {
-  token: string;
-  user: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    role: string;
+  success: boolean;
+  message: string;
+  data: {
+    token: string;
+    user: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      role: string;
+      phone?: string;
+    };
   };
 }
 
 export const loginUser = (data: LoginPayload) =>
-  api.post<AuthResponse>("/auth/login", data);
+  api.post<any>("/auth/login", data);
 
 export const registerUser = (data: RegisterPayload) =>
   api.post<AuthResponse>("/auth/register", data);

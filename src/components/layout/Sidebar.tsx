@@ -48,7 +48,7 @@ const navItems = [
 
     section: "ACCOUNT",
 
-    items: [{ label: "Auth / Profile", to: "/profile", icon: UserCircle }],
+    items: [{ label: "Profile", to: "/profile", icon: UserCircle }],
 
   },
 
@@ -181,10 +181,10 @@ export default function Sidebar() {
             </p>
 
             <p className="text-[10px] uppercase tracking-widest text-gray-400">
+             {typeof user?.role === "object" ? user?.role?.name : user?.role ?? ""}
+</p>
 
-              {user?.role ?? ""}
-
-            </p>
+           
 
           </div>
 
