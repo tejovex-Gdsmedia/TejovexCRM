@@ -10,6 +10,9 @@ import leadRoutes from './routes/lead.routes';
 import dealRoutes from './routes/deal.routes';
 import taskRoutes from './routes/task.routes';
 import noteRoutes from './routes/note.routes';
+import pipelineStageRoutes from './routes/pipelineStage.routes';
+import userRoutes from './routes/user.routes';
+
 
 const app = express();
 
@@ -25,6 +28,8 @@ app.use('/api/v1/leads', leadRoutes);
 app.use('/api/v1/deals', dealRoutes);
 app.use('/api/v1/tasks', taskRoutes);
 app.use('/api/v1/notes', noteRoutes);
+app.use('/api/v1/pipeline-stages', pipelineStageRoutes);
+app.use('/api/v1/users', userRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

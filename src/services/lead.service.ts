@@ -123,24 +123,27 @@ export class LeadService {
     });
   }
 
-  async assignTo(id: string, assignedToId: string) {
-    await this.getById(id);
+async assignTo(id: string, assignedToId?: string, assignedToName?: string) {
+  await this.getById(id);
 
-    return prisma.lead.update({
-      where: { id },
-      data: { assignedToId },
-      include: {
-        assignedTo: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
+  return prisma.lead.update({
+    where: { id },
+    data: {
+      ...(assignedToId && { assignedToId }),
+      ...(assignedToName !== undefined && { assignedToName }),
+    },
+    include: {
+      assignedTo: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
         },
       },
-    });
-  }
+    },
+  });
+}
 
   async delete(id: string) {
     await this.getById(id);

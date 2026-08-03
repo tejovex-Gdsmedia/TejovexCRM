@@ -6,6 +6,7 @@ export const createContactSchema = z.object({
   email: z.email('Invalid email').optional(),
   phone: z.string().optional(),
   companyId: z.string().optional(),
+  companyName: z.string().optional(),
 });
 
 export const updateContactSchema = createContactSchema.partial();

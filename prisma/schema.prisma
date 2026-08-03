@@ -71,7 +71,9 @@ model Lead {
   title        String
   status       LeadStatus  @default(NEW)
   source       LeadSource?
-  value        Float?
+  value          Float?
+  contactName    String?
+  assignedToName String?
   contactId    String?
   assignedToId String?
   createdById  String?
@@ -99,8 +101,9 @@ model Deal {
   probability       Int?
   expectedCloseDate DateTime?
   status            DealStatus    @default(OPEN)
-  stageId           String
+  stageId           String?
   contactId         String?
+  contactName       String?       // ← ADD THIS LINE ONLY
   companyId         String?
   assignedToId      String?
   createdAt         DateTime      @default(now())
@@ -109,7 +112,7 @@ model Deal {
   assignedTo        User?         @relation("AssignedDeals", fields: [assignedToId], references: [id])
   company           Company?      @relation(fields: [companyId], references: [id])
   contact           Contact?      @relation(fields: [contactId], references: [id])
-  stage             PipelineStage @relation(fields: [stageId], references: [id])
+  stage             PipelineStage? @relation(fields: [stageId], references: [id])
   notes             Note[]
   tasks             Task[]
 }
@@ -121,6 +124,7 @@ model Task {
   status       TaskStatus @default(PENDING)
   priority     Priority   @default(MEDIUM)
   dueDate      DateTime?
+  assignedToName String?
   assignedToId String?
   createdById  String?
   leadId       String?

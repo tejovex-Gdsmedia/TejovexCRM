@@ -82,22 +82,21 @@ export class LeadController {
     }
   }
 
-  async assignTo(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const { assignedToId } = req.body;
-      if (!assignedToId) throw new AppError('assignedToId is required', 400);
+async assignTo(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const { assignedToId, assignedToName } = req.body;
 
-      const lead = await leadService.assignTo(req.params.id as string, assignedToId);
+    const lead = await leadService.assignTo(req.params.id as string, assignedToId, assignedToName);
 
-      res.status(200).json({
-        success: true,
-        message: 'Lead assigned successfully',
-        data: lead,
-      });
-    } catch (error) {
-      next(error);
-    }
+    res.status(200).json({
+      success: true,
+      message: 'Lead assigned successfully',
+      data: lead,
+    });
+  } catch (error) {
+    next(error);
   }
+}
 
   async delete(req: AuthRequest, res: Response, next: NextFunction) {
     try {
