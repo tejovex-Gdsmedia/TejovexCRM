@@ -60,7 +60,12 @@ function LoginForm() {
     try {
       setServerError("");
       const res = await loginUser(data);
-      login(res.data.token);
+      const token = res.data?.data?.token ?? res.data?.token;
+      if (!token) {
+        setServerError("Login failed — no token received");
+        return;
+      }
+      login(token);
       navigate("/dashboard");
     } catch (err: any) {
       setServerError(err.response?.data?.message ?? "Login failed");
@@ -224,7 +229,6 @@ export default function AuthPage() {
             Welcome back! Please login or create an account.
           </p>
         </div>
-
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <RegisterForm />
           <LoginForm />

@@ -4,12 +4,12 @@ import ProtectedRoute  from "./routes/ProtectedRoute";
 import MainLayout      from "./components/layout/MainLayout";
 import AuthPage        from "./pages/auth/AuthPage";
 import Dashboard       from "./pages/dashboard/Dashboard";
-import Contacts        from "./pages/contacts/Contacts";
+import Contacts        from "./pages/contacts/ContactsPage";
 import Companies       from "./pages/companies/Companies";
 import Notes           from "./pages/notes/Notes";
-import Leads           from "./pages/leads/Leads";
-import Deals           from "./pages/deals/Deals";
-import Tasks           from "./pages/tasks/Tasks";
+import Leads           from "./pages/leads/LeadsPage";
+import Deals           from "./pages/deals/DealsPage";
+import Tasks           from "./pages/tasks/TasksPage";
 import Profile         from "./pages/profile/Profile";
 
 export default function App() {
