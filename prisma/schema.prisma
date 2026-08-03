@@ -101,7 +101,7 @@ model Deal {
   probability       Int?
   expectedCloseDate DateTime?
   status            DealStatus    @default(OPEN)
-  stageId           String
+  stageId           String?
   contactId         String?
   contactName       String?       // ← ADD THIS LINE ONLY
   companyId         String?
@@ -112,7 +112,7 @@ model Deal {
   assignedTo        User?         @relation("AssignedDeals", fields: [assignedToId], references: [id])
   company           Company?      @relation(fields: [companyId], references: [id])
   contact           Contact?      @relation(fields: [contactId], references: [id])
-  stage             PipelineStage @relation(fields: [stageId], references: [id])
+  stage             PipelineStage? @relation(fields: [stageId], references: [id])
   notes             Note[]
   tasks             Task[]
 }
