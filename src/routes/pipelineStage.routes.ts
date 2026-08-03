@@ -32,7 +32,7 @@ router.post('/sync', async (req: Request, res: Response, next: NextFunction) => 
     const removedStages = existingStages.filter(s => !stages.includes(s.name));
     
     for (const stage of removedStages) {
-      const dealCount = await prisma.deal.count({ where: { stageId: stage.id } });
+      const dealCount = await prisma.deal.count({ where: { stageId: stage.id, deletedAt: null } });
       if (dealCount > 0) {
         res.status(400).json({ success: false, message: `Stage "${stage.name}" has ${dealCount} deal(s). Move or delete them first.` });
         return;
