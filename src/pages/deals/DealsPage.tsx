@@ -199,6 +199,7 @@ const handleAddStage = async () => {
 
 
   const dragStageIndex = useRef<number | null>(null);
+  const dragDealId = useRef<string | null>(null);
 
 const handleDragStart = (index: number) => {
   dragStageIndex.current = index;
@@ -232,6 +233,34 @@ const handleDrop = async (index: number) => {
   }
 };
 
+const handleDealDragStart = (dealId: string) => {
+  dragDealId.current = dealId;
+};
+
+const handleDealDrop = async (e: React.DragEvent, stageId: string) => {
+  e.stopPropagation();
+  if (!dragDealId.current) return;
+  const dealId = dragDealId.current;
+  dragDealId.current = null;
+
+  // Update local state immediately
+  setDeals(prev =>
+    prev.map(d => d.id === dealId ? { ...d, stageId } : d)
+  );
+
+  // Save to backend
+  try {
+    await axios.put(
+      `${API}/deals/${dealId}`,
+      { stageId },
+      authHeaders
+    );
+  } catch (err) {
+    console.error("Deal stage update failed:", err);
+    alert("Failed to move deal. Try again.");
+  }
+};
+
   return (
     <div className="p-6 max-w-full">
 
@@ -262,7 +291,12 @@ const handleDrop = async (index: number) => {
         {stages.map((stage) => {
           const stageDeals = deals.filter((d) => d.stageId === stage.id); // CHANGED: d.stage === name → d.stageId === id
           return (
-            <div key={stage.id} className="min-w-[220px] w-[220px] flex-shrink-0">
+            <div
+  key={stage.id}
+  className="min-w-[220px] w-[220px] flex-shrink-0"
+  onDragOver={(e) => e.preventDefault()}
+  onDrop={(e) => handleDealDrop(e, stage.id)}
+>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-gray-700">{stage.name}</h3>
                 <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-0.5 rounded-full">{stageDeals.length}</span>
@@ -275,7 +309,13 @@ const handleDrop = async (index: number) => {
                   </div>
                 ) : (
                   stageDeals.map((deal) => (
-                    <div key={deal.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition cursor-pointer" onClick={() => openEdit(deal)}>
+                    <div
+  key={deal.id}
+  draggable
+  onDragStart={() => handleDealDragStart(deal.id)}
+  className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition cursor-grab"
+  onClick={() => openEdit(deal)}
+>
                       <p className="text-sm font-medium text-gray-900 mb-1 leading-tight">{deal.title}</p>
                       <p className="text-orange-500 font-bold text-sm mb-2">₹{deal.value?.toLocaleString("en-IN") || 0}</p>
 
