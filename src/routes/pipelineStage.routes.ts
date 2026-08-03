@@ -33,7 +33,7 @@ router.post('/sync', async (req: Request, res: Response, next: NextFunction) => 
     
     for (const stage of removedStages) {
       const dealCount = await prisma.deal.count({ where: { stageId: stage.id, deletedAt: null } });
-      if (dealCount > 0) {
+      if (dealCount > 0) {  
         res.status(400).json({ success: false, message: `Stage "${stage.name}" has ${dealCount} deal(s). Move or delete them first.` });
         return;
       }
@@ -41,6 +41,11 @@ router.post('/sync', async (req: Request, res: Response, next: NextFunction) => 
 
 // Only delete stages that are being removed
     for (const stage of removedStages) {
+      // Unlink soft deleted deals from this stage
+      await prisma.deal.updateMany({
+        where: { stageId: stage.id, deletedAt: { not: null } },
+        data: { stageId: null },
+      });
       await prisma.pipelineStage.delete({ where: { id: stage.id } });
     }
 
