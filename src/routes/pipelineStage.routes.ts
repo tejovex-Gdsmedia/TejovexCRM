@@ -17,6 +17,35 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
+// PATCH /reorder — update order of stages
+router.patch('/reorder', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { stages } = req.body;
+    // stages = [{ id: "uuid1", order: 1 }, { id: "uuid2", order: 2 }]
+
+    if (!Array.isArray(stages)) {
+      res.status(400).json({ success: false, message: 'stages must be an array' });
+      return;
+    }
+
+    // Update order for each stage
+    for (const stage of stages) {
+      await prisma.pipelineStage.update({
+        where: { id: stage.id },
+        data: { order: stage.order },
+      });
+    }
+
+    const updated = await prisma.pipelineStage.findMany({
+      orderBy: { order: 'asc' },
+    });
+
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /sync — wipes all stages and replaces with what frontend sends
 router.post('/sync', async (req: Request, res: Response, next: NextFunction) => {
   try {
