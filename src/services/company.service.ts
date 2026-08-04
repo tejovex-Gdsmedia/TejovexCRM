@@ -4,31 +4,47 @@ import { CreateCompanyInput, UpdateCompanyInput } from '../validators/company.va
 
 export class CompanyService {
 
-  async getAll(search?: string) {
-    return prisma.company.findMany({
-      where: {
-        deletedAt: null,
-        ...(search && {
-          OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { industry: { contains: search, mode: 'insensitive' } },
-          ],
-        }),
+async getAll(search?: string) {
+  const companies = await prisma.company.findMany({
+    where: {
+      deletedAt: null,
+      ...(search && {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { industry: { contains: search, mode: 'insensitive' } },
+        ],
+      }),
+    },
+    include: {
+      contacts: {
+        where: { deletedAt: null },
       },
-      include: {
-        contacts: {
-          where: { deletedAt: null },
-        },
-        _count: {
-          select: {
-            contacts: true,
-            deals: true,
-          },
+      _count: {
+        select: {
+          contacts: true,
+          deals: true,
         },
       },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
+      // 👇 Add this to get deals with WON status
+      deals: {
+        where: {
+          deletedAt: null,
+          status: 'WON',
+        },
+        select: {
+          id: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  // 👇 Map over to add wonDealsCount
+  return companies.map(company => ({
+    ...company,
+    wonDealsCount: company.deals.length,
+  }));
+}
 
   async getById(id: string) {
     const company = await prisma.company.findFirst({
