@@ -1,20 +1,3 @@
-// import { Router } from 'express';
-// import { contactController } from '../controllers/contact.controller';
-// import { protect } from '../middleware/auth.middleware';
-
-// const router = Router();
-
-// router.use(protect);
-
-// router.get('/', (req, res, next) => contactController.getAll(req as any, res, next));
-// router.get('/:id', (req, res, next) => contactController.getById(req as any, res, next));
-// router.post('/', (req, res, next) => contactController.create(req as any, res, next));
-// router.put('/:id', (req, res, next) => contactController.update(req as any, res, next));
-// router.delete('/:id', (req, res, next) => contactController.delete(req as any, res, next));
-
-// export default router;
-
-
 import { Router, Request, Response, NextFunction } from 'express';
 import { contactController } from '../controllers/contact.controller';
 import { protect } from '../middleware/auth.middleware';
@@ -22,7 +5,7 @@ import { protect } from '../middleware/auth.middleware';
 const router = Router();
 
 router.use(protect);
-
+router.post('/import', (req: Request, res: Response, next: NextFunction) => contactController.importContacts(req as any, res, next));
 router.get('/', (req: Request, res: Response, next: NextFunction) => contactController.getAll(req as any, res, next));
 router.get('/:id', (req: Request, res: Response, next: NextFunction) => contactController.getById(req as any, res, next));
 router.post('/', (req: Request, res: Response, next: NextFunction) => contactController.create(req as any, res, next));

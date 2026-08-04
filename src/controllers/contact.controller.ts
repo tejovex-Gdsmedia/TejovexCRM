@@ -1,6 +1,6 @@
+import { createContactSchema, updateContactSchema, bulkImportContactsSchema } from '../validators/contact.validator';
 import { Response, NextFunction } from 'express';
 import { contactService } from '../services/contact.service';
-import { createContactSchema, updateContactSchema } from '../validators/contact.validator';
 import { AuthRequest } from '../middleware/auth.middleware';
 
 export class ContactController {
@@ -75,6 +75,20 @@ export class ContactController {
       next(error);
     }
   }
+  async importContacts(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const parsed  = bulkImportContactsSchema.parse(req.body);
+    const results = await contactService.bulkImport(parsed.contacts);
+
+    res.status(200).json({
+      success: true,
+      message: `Import complete: ${results.created} created, ${results.skipped} skipped`,
+      data: results,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 }
 
 export const contactController = new ContactController();

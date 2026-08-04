@@ -131,6 +131,40 @@ export class ContactService {
       data: { deletedAt: new Date() },
     });
   }
+  async bulkImport(
+  contacts: { firstName: string; lastName?: string; email?: string; phone?: string }[]
+): Promise<{ created: number; skipped: number; errors: string[] }> {
+  const results = { created: 0, skipped: 0, errors: [] as string[] };
+
+  for (const contact of contacts) {
+    try {
+      const email    = contact.email?.trim()    || null;
+      const phone    = contact.phone?.trim()    || null;
+      const lastName = contact.lastName?.trim() || '';
+
+      if (email) {
+        const existing = await prisma.contact.findFirst({
+          where: { email, deletedAt: null },
+        });
+        if (existing) { results.skipped++; continue; }
+      }
+
+      await prisma.contact.create({
+        data: { firstName: contact.firstName.trim(), lastName, email, phone },
+      });
+      results.created++;
+    } catch (err: any) {
+      if (err?.code === 'P2002') {
+        results.skipped++;
+      } else {
+        results.errors.push(`${contact.firstName}: Failed to import`);
+      }
+    }
+  }
+
+  return results;
+}
 }
 
 export const contactService = new ContactService();
+
