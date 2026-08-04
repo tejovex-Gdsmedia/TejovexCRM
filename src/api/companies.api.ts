@@ -5,6 +5,7 @@ export interface Company {
   name: string;
   website?: string;
   industry?: string;
+  wonDealsCount?: number;
   _count?: {
     contacts: number;
     deals: number;
