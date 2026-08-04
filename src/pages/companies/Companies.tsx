@@ -215,7 +215,9 @@ export default function Companies() {
                     <td className="px-5 py-4 text-gray-500">{company.website || "—"}</td>
                     <td className="px-5 py-4 text-gray-500">{company.industry || "—"}</td>
                     <td className="px-5 py-4 text-gray-600">{company._count?.contacts ?? 0}</td>
-                    <td className="px-5 py-4 text-gray-600">{company._count?.deals ?? 0}</td>
+                    <td className="px-5 py-4 text-gray-600">
+                    {(company.wonDealsCount ?? 0) > 0 ? company.wonDealsCount : "—"}
+                    </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
                         <button onClick={() => setViewItem(company)} className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
