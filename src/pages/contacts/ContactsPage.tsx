@@ -44,6 +44,7 @@ export default function ContactsPage() {
   const [isModalOpen, setIsModalOpen]       = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [viewingContact, setViewingContact] = useState<Contact | null>(null);
+  const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
@@ -117,11 +118,11 @@ export default function ContactsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Delete this contact?")) {
-      await axios.delete(`${API}/contacts/${id}`, authHeaders);
-      setContacts((prev) => prev.filter((c) => c.id !== id));
-    }
+const handleDelete = async () => {
+    if (!deletingContact) return;
+    await axios.delete(`${API}/contacts/${deletingContact.id}`, authHeaders);
+    setContacts((prev) => prev.filter((c) => c.id !== deletingContact.id));
+    setDeletingContact(null);
   };
 
   return (
@@ -176,7 +177,7 @@ export default function ContactsPage() {
                   <td className="px-6 py-4 flex gap-2">
                     <button onClick={() => setViewingContact(contact)} className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-100 transition">View</button>
                     <button onClick={() => openEdit(contact)} className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-100 transition">Edit</button>
-                    <button onClick={() => handleDelete(contact.id)} className="px-3 py-1 text-xs border border-red-300 text-red-500 rounded hover:bg-red-50 transition">Delete</button>
+                    <button onClick={() => setDeletingContact(contact)} className="px-3 py-1 text-xs border border-red-300 text-red-500 rounded hover:bg-red-50 transition">Delete</button>
                   </td>
                 </tr>
               ))
@@ -249,6 +250,20 @@ export default function ContactsPage() {
                 <button type="submit" className="px-4 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">{editingContact ? "Save Changes" : "Add Contact"}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+{/* Delete Modal */}
+      {deletingContact && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">Delete Contact</h2>
+            <p className="text-sm text-gray-600 mb-5">Are you sure you want to delete <strong>{deletingContact.firstName} {deletingContact.lastName}</strong>? This cannot be undone.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeletingContact(null)} className="flex-1 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+              <button onClick={handleDelete} className="flex-1 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition">Yes, Delete</button>
+            </div>
           </div>
         </div>
       )}

@@ -87,6 +87,7 @@ export default function LeadsPage() {
   const [statusModal, setStatusModal] = useState<Lead | null>(null);
   const [assignModal, setAssignModal] = useState<Lead | null>(null);
   const [assignName, setAssignName] = useState("");
+  const [deletingLead, setDeletingLead] = useState<Lead | null>(null);
   const [users, setUsers] = useState<User[]>([]);
 
 const fetchLeads = () => {
@@ -160,10 +161,11 @@ const fetchLeads = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this lead?")) return;
+const handleDelete = async () => {
+    if (!deletingLead) return;
     try {
-      await axios.delete(`${API}/leads/${id}`, getAuthHeaders());
+      await axios.delete(`${API}/leads/${deletingLead.id}`, getAuthHeaders());
+      setDeletingLead(null);
       fetchLeads();
     } catch (err) {
       console.error("Delete error:", err);
@@ -269,7 +271,7 @@ const handleAssign = async () => {
                     <button onClick={() => setViewingLead(lead)} className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-100 transition">View</button>
                     <button onClick={() => setStatusModal(lead)} className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-100 transition">Status</button>
                     <button onClick={() => { setAssignModal(lead); setAssignName(lead.assignedToName || ''); }} className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-100 transition">Assign</button>
-                    <button onClick={() => handleDelete(lead.id)} className="px-3 py-1 text-xs border border-red-300 text-red-500 rounded hover:bg-red-50 transition">Del</button>
+                    <button onClick={() => setDeletingLead(lead)} className="px-3 py-1 text-xs border border-red-300 text-red-500 rounded hover:bg-red-50 transition">Del</button>
                   </td>
                 </tr>
               ))
@@ -416,6 +418,20 @@ const handleAssign = async () => {
                 <button type="submit" className="px-4 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">{editingLead ? "Save Changes" : "Add Lead"}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+{/* Delete Modal */}
+      {deletingLead && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">Delete Lead</h2>
+            <p className="text-sm text-gray-600 mb-5">Are you sure you want to delete <strong>{deletingLead.title}</strong>? This cannot be undone.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeletingLead(null)} className="flex-1 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+              <button onClick={handleDelete} className="flex-1 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition">Yes, Delete</button>
+            </div>
           </div>
         </div>
       )}
