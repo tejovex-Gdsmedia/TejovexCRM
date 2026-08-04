@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Upload, Download, X } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────
 interface Company {
@@ -45,6 +46,9 @@ export default function ContactsPage() {
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [viewingContact, setViewingContact] = useState<Contact | null>(null);
   const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
+  const [importing, setImporting]       = useState(false);
+const [importResult, setImportResult] = useState<{ created: number; skipped: number; errors: string[] } | null>(null);
+const fileInputRef                    = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
@@ -117,6 +121,64 @@ export default function ContactsPage() {
       console.error("Error:", err);
     }
   };
+  const parseCSV = (text: string) => {
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, "").toLowerCase());
+    const firstNameIdx = headers.findIndex((h) => h === "firstname" || h === "first name");
+    const lastNameIdx  = headers.findIndex((h) => h === "lastname"  || h === "last name");
+    const emailIdx     = headers.findIndex((h) => h === "email");
+    const phoneIdx     = headers.findIndex((h) => h === "phone");
+    if (firstNameIdx === -1) return [];
+    return lines.slice(1).filter((l) => l.trim()).map((line) => {
+      const cols = line.split(",").map((c) => c.trim().replace(/"/g, ""));
+      return {
+        firstName: cols[firstNameIdx] || "",
+        lastName:  lastNameIdx >= 0 ? cols[lastNameIdx] || "" : "",
+        email:     emailIdx  >= 0 ? cols[emailIdx]  || "" : "",
+        phone:     phoneIdx  >= 0 ? cols[phoneIdx]  || "" : "",
+      };
+    }).filter((c) => c.firstName);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    const parsed = parseCSV(text);
+    if (parsed.length === 0) {
+      alert("No valid contacts found.\nCSV must have: FirstName, LastName, Email, Phone");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    if (parsed.length > 500) {
+      alert("Maximum 500 contacts per import.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const res = await axios.post(`${API}/contacts/import`, { contacts: parsed }, authHeaders);
+      setImportResult(res.data?.data);
+      const refreshed = await axios.get(`${API}/contacts`, authHeaders);
+      setContacts(Array.isArray(refreshed.data) ? refreshed.data : refreshed.data.data || []);
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Import failed.");
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const downloadSampleCSV = () => {
+    const csv = ["FirstName,LastName,Email,Phone", "John,Doe,john@example.com,9876543210", "Jane,Smith,jane@example.com,8765432109"].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = "contacts_sample.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
 
 const handleDelete = async () => {
     if (!deletingContact) return;
@@ -134,12 +196,30 @@ const handleDelete = async () => {
           <h1 className="text-2xl font-bold text-gray-900">Contacts</h1>
           <p className="text-sm text-gray-500 mt-1">People in your CRM linked to companies, leads and deals.</p>
         </div>
-        <button onClick={openAdd} className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-          + Add Contact
-        </button>
+<div className="flex items-center gap-2">
+          <button onClick={downloadSampleCSV} className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+            <Download size={14} /> Sample CSV
+          </button>
+          <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileChange} />
+          <button onClick={() => fileInputRef.current?.click()} disabled={importing} className="flex items-center gap-1.5 px-4 py-2 text-sm bg-gray-800 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition">
+            <Upload size={14} /> {importing ? "Importing…" : "Import CSV"}
+          </button>
+          <button onClick={openAdd} className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+            + Add Contact
+          </button>
+        </div>
       </div>
 
       {/* Search — UNCHANGED */}
+      {importResult && (
+        <div className="mb-4 flex items-center justify-between px-4 py-3 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-sm text-green-700">
+            ✓ Import complete — <b>{importResult.created}</b> created, <b>{importResult.skipped}</b> skipped
+            {importResult.errors.length > 0 && <span className="text-red-500 ml-1">, {importResult.errors.length} errors</span>}
+          </p>
+          <button onClick={() => setImportResult(null)} className="ml-4 text-green-500 hover:text-green-700"><X size={14} /></button>
+        </div>
+      )}
       <div className="mb-4 w-full max-w-sm">
         <input
           type="text"
