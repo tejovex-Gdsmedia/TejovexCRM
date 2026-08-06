@@ -9,47 +9,47 @@ const buildVariables = async (
 ): Promise<Record<string, string>> => {
   const vars: Record<string, string> = {};
 
-if (leadId) {
-  const lead = await prisma.lead.findFirst({ where: { id: leadId } });
-  if (lead) {
-    const parts = (lead.contactName || lead.title || '').split(' ');
-    vars['lead.firstName'] = parts[0] || '';
-    vars['lead.lastName'] = parts.slice(1).join(' ') || '';
-    vars['lead.name'] = lead.contactName || lead.title || '';
-    vars['lead.title'] = lead.title || '';
-    vars['lead.email'] = '';
-    vars['lead.phone'] = '';
-    vars['lead.company'] = '';
+  if (leadId) {
+    const lead = await prisma.lead.findFirst({ where: { id: leadId } });
+    if (lead) {
+      const parts = (lead.contactName || lead.title || '').split(' ');
+      vars['lead.firstName'] = parts[0] || '';
+      vars['lead.lastName'] = parts.slice(1).join(' ') || '';
+      vars['lead.name'] = lead.contactName || lead.title || '';
+      vars['lead.title'] = lead.title || '';
+      vars['lead.email'] = lead.email || '';
+      vars['lead.phone'] = lead.phone || '';
+      vars['lead.company'] = '';
+    }
   }
-}
+
   if (contactId) {
     const contact = await prisma.contact.findFirst({ where: { id: contactId } });
     if (contact) {
-      const parts = ((contact as any).name || '').split(' ');
-      vars['contact.firstName'] = parts[0] || '';
-      vars['contact.lastName'] = parts.slice(1).join(' ') || '';
-      vars['contact.name'] = (contact as any).name || '';
-      vars['contact.email'] = (contact as any).email || '';
-      vars['contact.company'] = (contact as any).companyName || '';
+      vars['contact.firstName'] = contact.firstName || '';
+      vars['contact.lastName'] = contact.lastName || '';
+      vars['contact.name'] = `${contact.firstName} ${contact.lastName}`.trim();
+      vars['contact.email'] = contact.email || '';
+      vars['contact.phone'] = contact.phone || '';
+      vars['contact.company'] = '';
     }
   }
 
   if (dealId) {
     const deal = await prisma.deal.findFirst({ where: { id: dealId } });
     if (deal) {
-      vars['deal.name'] = (deal as any).name || '';
-      vars['deal.value'] = String((deal as any).value || '');
+      vars['deal.name'] = deal.title || '';
+      vars['deal.value'] = String(deal.value || '');
     }
   }
 
   if (userId) {
     const user = await prisma.user.findFirst({ where: { id: userId } });
     if (user) {
-      const parts = ((user as any).name || '').split(' ');
-      vars['user.firstName'] = parts[0] || '';
-      vars['user.lastName'] = parts.slice(1).join(' ') || '';
-      vars['user.name'] = (user as any).name || '';
-      vars['user.email'] = (user as any).email || '';
+      vars['user.firstName'] = user.firstName || '';
+      vars['user.lastName'] = user.lastName || '';
+      vars['user.name'] = `${user.firstName} ${user.lastName}`.trim();
+      vars['user.email'] = user.email || '';
     }
   }
 
@@ -86,12 +86,12 @@ export const FollowUpService = {
         createdById: userId,
       },
       include: {
-      lead: { select: { id: true, title: true, contactName: true } },
-      contact: { select: { id: true, firstName: true, lastName: true } },
-      deal: { select: { id: true, name: true } },
-      assignedTo: { select: { id: true, firstName: true, lastName: true } },
-      createdBy: { select: { id: true, firstName: true, lastName: true } },
-      emailTemplate: { select: { id: true, name: true, stage: true } },
+        lead: { select: { id: true, title: true, contactName: true } },
+        contact: { select: { id: true, firstName: true, lastName: true } },
+        deal: { select: { id: true, title: true } },
+        assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
+        emailTemplate: { select: { id: true, name: true, stage: true } },
       },
     });
   },
@@ -113,11 +113,11 @@ export const FollowUpService = {
     return await prisma.followUp.findMany({
       where,
       include: {
-        lead: { select: { id: true, name: true } },
-        contact: { select: { id: true, name: true } },
-        deal: { select: { id: true, name: true } },
-        assignedTo: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, name: true } },
+        lead: { select: { id: true, title: true, contactName: true } },
+        contact: { select: { id: true, firstName: true, lastName: true } },
+        deal: { select: { id: true, title: true } },
+        assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
         emailTemplate: { select: { id: true, name: true, stage: true } },
       },
       orderBy: { dueDate: 'asc' },
@@ -128,11 +128,11 @@ export const FollowUpService = {
     return await prisma.followUp.findFirst({
       where: { id, deletedAt: null },
       include: {
-        lead: { select: { id: true, name: true } },
-        contact: { select: { id: true, name: true } },
-        deal: { select: { id: true, name: true } },
-        assignedTo: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, name: true } },
+        lead: { select: { id: true, title: true, contactName: true } },
+        contact: { select: { id: true, firstName: true, lastName: true } },
+        deal: { select: { id: true, title: true } },
+        assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
         emailTemplate: true,
       },
     });
@@ -158,10 +158,10 @@ export const FollowUpService = {
       where: { id },
       data: updateData,
       include: {
-        lead: { select: { id: true, name: true } },
-        contact: { select: { id: true, name: true } },
-        deal: { select: { id: true, name: true } },
-        assignedTo: { select: { id: true, name: true } },
+        lead: { select: { id: true, title: true, contactName: true } },
+        contact: { select: { id: true, firstName: true, lastName: true } },
+        deal: { select: { id: true, title: true } },
+        assignedTo: { select: { id: true, firstName: true, lastName: true } },
         emailTemplate: { select: { id: true, name: true } },
       },
     });
@@ -205,14 +205,18 @@ export const FollowUpService = {
     for (const followUp of scheduled) {
       try {
         const toEmail =
-          (followUp.lead as any)?.email ||
-          (followUp.contact as any)?.email;
+          followUp.lead?.email ||
+          followUp.contact?.email;
 
         if (toEmail && followUp.emailSubject && followUp.emailBody) {
           await sendEmail(toEmail, followUp.emailSubject, followUp.emailBody);
           await prisma.followUp.update({
             where: { id: followUp.id },
-            data: { emailSentAt: new Date(), status: 'COMPLETED', completedAt: new Date() },
+            data: {
+              emailSentAt: new Date(),
+              status: 'COMPLETED',
+              completedAt: new Date(),
+            },
           });
         }
       } catch (err) {
