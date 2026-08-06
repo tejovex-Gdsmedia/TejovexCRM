@@ -86,12 +86,12 @@ export const FollowUpService = {
         createdById: userId,
       },
       include: {
-        lead: { select: { id: true, name: true } },
-        contact: { select: { id: true, name: true } },
-        deal: { select: { id: true, name: true } },
-        assignedTo: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, name: true } },
-        emailTemplate: { select: { id: true, name: true, stage: true } },
+      lead: { select: { id: true, title: true, contactName: true } },
+      contact: { select: { id: true, firstName: true, lastName: true } },
+      deal: { select: { id: true, name: true } },
+      assignedTo: { select: { id: true, firstName: true, lastName: true } },
+      createdBy: { select: { id: true, firstName: true, lastName: true } },
+      emailTemplate: { select: { id: true, name: true, stage: true } },
       },
     });
   },
