@@ -1,3 +1,6 @@
+import followupRoutes from './routes/followup.routes';
+import emailTemplateRoutes from './routes/emailTemplate.routes';
+import { startFollowUpCron } from './cron/followup.cron';
 import express from 'express';
 import cors from 'cors';
 import { config } from './config/env';
@@ -30,6 +33,8 @@ app.use('/api/v1/tasks', taskRoutes);
 app.use('/api/v1/notes', noteRoutes);
 app.use('/api/v1/pipeline-stages', pipelineStageRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/followups', followupRoutes);
+app.use('/api/v1/email-templates', emailTemplateRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -56,6 +61,9 @@ async function main() {
       console.log(`✅ Server running on http://localhost:${config.port}`);
       console.log(`📋 Environment: ${config.nodeEnv}`);
     });
+    
+    startFollowUpCron();
+    
   } catch (error) {
     console.error('❌ Database connection failed:', error);
     process.exit(1);

@@ -36,6 +36,9 @@ model User {
   assignedTasks Task[]     @relation("AssignedTasks")
   createdTasks  Task[]     @relation("CreatedTasks")
   role          Role       @relation(fields: [roleId], references: [id])
+  followUpsAssigned     FollowUp[]      @relation("FollowUpAssignedTo")
+  followUpsCreated      FollowUp[]      @relation("FollowUpCreatedBy")
+  emailTemplatesCreated EmailTemplate[] @relation("EmailTemplateCreatedBy")
 }
 
 model Company {
@@ -64,6 +67,7 @@ model Contact {
   deals     Deal[]
   leads     Lead[]
   notes     Note[]
+  followUps  FollowUp[]
 }
 
 model Lead {
@@ -72,6 +76,8 @@ model Lead {
   status       LeadStatus  @default(NEW)
   source       LeadSource?
   value          Float?
+  email        String?
+  phone        String?
   contactName    String?
   assignedToName String?
   contactId    String?
@@ -85,6 +91,7 @@ model Lead {
   createdBy    User?       @relation("CreatedLeads", fields: [createdById], references: [id])
   notes        Note[]
   tasks        Task[]
+  followUps  FollowUp[]
 }
 
 model PipelineStage {
@@ -115,6 +122,7 @@ model Deal {
   stage             PipelineStage? @relation(fields: [stageId], references: [id])
   notes             Note[]
   tasks             Task[]
+  followUps  FollowUp[]
 }
 
 model Task {
@@ -164,6 +172,59 @@ model Activity {
   user        User?    @relation(fields: [userId], references: [id])
 }
 
+model FollowUp {
+  id             String           @id @default(cuid())
+  title          String
+  type           FollowUpType     @default(CALL)
+  status         FollowUpStatus   @default(PENDING)
+  priority       FollowUpPriority @default(MEDIUM)
+  dueDate        DateTime
+  scheduledAt    DateTime?
+  completionNote String?
+  completedAt    DateTime?
+
+  emailStage      EmailStage?
+  emailTemplateId String?
+  emailTemplate   EmailTemplate?  @relation(fields: [emailTemplateId], references: [id])
+  emailSubject    String?
+  emailBody       String?         @db.Text
+  emailSentAt     DateTime?
+
+  leadId    String?
+  lead      Lead?    @relation(fields: [leadId], references: [id])
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id])
+  dealId    String?
+  deal      Deal?    @relation(fields: [dealId], references: [id])
+
+  assignedToId String?
+  assignedTo   User?  @relation("FollowUpAssignedTo", fields: [assignedToId], references: [id])
+  createdById  String
+  createdBy    User   @relation("FollowUpCreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model EmailTemplate {
+  id       String     @id @default(cuid())
+  name     String
+  stage    EmailStage
+  subject  String
+  body     String     @db.Text
+  isActive Boolean    @default(true)
+
+  createdById String
+  createdBy   User   @relation("EmailTemplateCreatedBy", fields: [createdById], references: [id])
+
+  followUps FollowUp[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
 enum LeadStatus {
   NEW
   CONTACTED
@@ -200,3 +261,38 @@ enum Priority {
   MEDIUM
   HIGH
 }
+
+
+enum FollowUpType {
+  CALL
+  EMAIL
+  MEETING
+  WHATSAPP
+  SMS
+}
+
+enum FollowUpStatus {
+  PENDING
+  COMPLETED
+  OVERDUE
+  SKIPPED
+}
+
+enum FollowUpPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum EmailStage {
+  INITIAL_OUTREACH
+  FOLLOWUP_1
+  FOLLOWUP_2
+  FOLLOWUP_3
+  REENGAGEMENT
+  POST_MEETING
+  PROPOSAL_SENT
+  CLOSING
+  CUSTOM
+}
+
