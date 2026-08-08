@@ -34,8 +34,11 @@ type ContactFormData = z.infer<typeof contactSchema>;
 
 // ── API Config ─────────────────────────────────────
 const API   = "https://tejovexcrm-backend.onrender.com/api/v1";
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyYjYwMzdiNC0zZjYzLTRjYzgtODI5NS1jMTYzYmQ5N2RjYjYiLCJlbWFpbCI6InRlY2hnZHNtZWRpYUBnbWFpbC5jb20iLCJyb2xlSWQiOiJhNGI0NDIzYy1iYWZlLTRiYjEtYmIzOC02NTlhYzk1YTA5ODEiLCJpYXQiOjE3ODUzMjM2OTgsImV4cCI6MTc4NTkyODQ5OH0.PreWV_1JvkMl1BpaQRXSlVfeG_NSOx03P2ulx3NoOaA";
-const authHeaders = { headers: { Authorization: `Bearer ${TOKEN}` } };
+const getAuthHeaders = () => ({
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+  },
+});
 
 // ── Main Component ─────────────────────────────────
 export default function ContactsPage() {
@@ -56,7 +59,7 @@ const fileInputRef                    = useRef<HTMLInputElement>(null);
 
   // Fetch contacts only — REMOVED companies fetch
   useEffect(() => {
-    axios.get(`${API}/contacts`, authHeaders)
+    axios.get(`${API}/contacts`, getAuthHeaders())
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : res.data.data || [];
         setContacts(data);
@@ -98,7 +101,7 @@ const fileInputRef                    = useRef<HTMLInputElement>(null);
           email:       data.email,
           phone:       data.phone,
           companyName: data.companyName || undefined,  // ← CHANGED: was companyId
-        }, authHeaders);
+        },  getAuthHeaders());
 
         // Update local state with the company the backend linked
         setContacts((prev) => prev.map((c) =>
@@ -111,7 +114,7 @@ const fileInputRef                    = useRef<HTMLInputElement>(null);
           email:       data.email,
           phone:       data.phone,
           companyName: data.companyName || undefined,  // ← CHANGED: was companyId
-        }, authHeaders);
+        }, getAuthHeaders());
 
         setContacts((prev) => [...prev, res.data.data]);
       }
@@ -159,9 +162,9 @@ const fileInputRef                    = useRef<HTMLInputElement>(null);
     setImporting(true);
     setImportResult(null);
     try {
-      const res = await axios.post(`${API}/contacts/import`, { contacts: parsed }, authHeaders);
+      const res = await axios.post(`${API}/contacts/import`, { contacts: parsed }, getAuthHeaders());
       setImportResult(res.data?.data);
-      const refreshed = await axios.get(`${API}/contacts`, authHeaders);
+      const refreshed = await axios.get(`${API}/contacts`, getAuthHeaders());
       setContacts(Array.isArray(refreshed.data) ? refreshed.data : refreshed.data.data || []);
     } catch (err: any) {
       alert(err.response?.data?.message || "Import failed.");
@@ -182,7 +185,7 @@ const fileInputRef                    = useRef<HTMLInputElement>(null);
 
 const handleDelete = async () => {
     if (!deletingContact) return;
-    await axios.delete(`${API}/contacts/${deletingContact.id}`, authHeaders);
+    await axios.delete(`${API}/contacts/${deletingContact.id}`, getAuthHeaders());
     setContacts((prev) => prev.filter((c) => c.id !== deletingContact.id));
     setDeletingContact(null);
   };

@@ -36,8 +36,7 @@ type DealFormData = z.infer<typeof dealSchema>;
 
 // Same as ContactsPage.tsx — hardcoded until login is connected
 const API = "https://tejovexcrm-backend.onrender.com/api/v1";
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyYjYwMzdiNC0zZjYzLTRjYzgtODI5NS1jMTYzYmQ5N2RjYjYiLCJlbWFpbCI6InRlY2hnZHNtZWRpYUBnbWFpbC5jb20iLCJyb2xlSWQiOiJhNGI0NDIzYy1iYWZlLTRiYjEtYmIzOC02NTlhYzk1YTA5ODEiLCJpYXQiOjE3ODU0MTQyODgsImV4cCI6MTc4NjAxOTA4OH0.eMs-9-pYlukIqTaWnrKdJDm5qrru897X4GJNPB1LtDU";
-const authHeaders = { headers: { Authorization: `Bearer ${TOKEN}` } };
+const getAuthHeaders = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` } });
 
 // Style Maps — UNCHANGED
 const statusStyles: Record<DealStatus, string> = {
@@ -66,14 +65,14 @@ export default function DealsPage() {
 
   // ADD: fetch deals and pipeline stages from backend on page load
   useEffect(() => {
-    axios.get(`${API}/deals`, authHeaders)
+    axios.get(`${API}/deals`, getAuthHeaders())
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : res.data.data || [];
         setDeals(data);
       })
       .catch((err) => console.error("Deals fetch error:", err));
 
-    axios.get(`${API}/pipeline-stages`, authHeaders)
+    axios.get(`${API}/pipeline-stages`, getAuthHeaders())
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : res.data.data || [];
         setStages(data);
@@ -120,10 +119,10 @@ export default function DealsPage() {
       };
 
       if (editingDeal) {
-        const res = await axios.put(`${API}/deals/${editingDeal.id}`, payload, authHeaders);
+        const res = await axios.put(`${API}/deals/${editingDeal.id}`, payload, getAuthHeaders());
         setDeals((prev) => prev.map((d) => d.id === editingDeal.id ? res.data.data : d));
       } else {
-        const res = await axios.post(`${API}/deals`, payload, authHeaders);
+        const res = await axios.post(`${API}/deals`, payload, getAuthHeaders());
         setDeals((prev) => [...prev, res.data.data]);
       }
 
@@ -139,7 +138,7 @@ export default function DealsPage() {
   const handleDelete = async (id: string) => {
     if (confirm("Delete this deal?")) {
       try {
-        await axios.delete(`${API}/deals/${id}`, authHeaders);
+        await axios.delete(`${API}/deals/${id}`, getAuthHeaders());
         setDeals((prev) => prev.filter((d) => d.id !== id));
       } catch (err) {
         console.error("Delete error:", err);
@@ -163,7 +162,7 @@ const handleRemoveStage = async (stageId: string) => {
       const res = await axios.post(
         `${API}/pipeline-stages/sync`,
         { stages: updatedStages.map((s) => s.name) },
-        authHeaders
+        getAuthHeaders()
       );
       // Update local state with real DB response (has proper IDs)
       const data = Array.isArray(res.data) ? res.data : res.data.data || [];
@@ -185,7 +184,7 @@ const handleAddStage = async () => {
       const res = await axios.post(
         `${API}/pipeline-stages/sync`,
         { stages: updatedStages.map((s) => s.name) },
-        authHeaders
+        getAuthHeaders()
       );
       // Update local state with real DB response (has proper IDs)
       const data = Array.isArray(res.data) ? res.data : res.data.data || [];
@@ -225,7 +224,7 @@ const handleDrop = async (index: number) => {
     await axios.patch(
       `${API}/pipeline-stages/reorder`,
       { stages: reordered.map((s, i) => ({ id: s.id, order: i + 1 })) },
-      authHeaders
+      getAuthHeaders()
     );
   } catch (err) {
     console.error("Reorder failed:", err);
@@ -253,7 +252,7 @@ const handleDealDrop = async (e: React.DragEvent, stageId: string) => {
     await axios.put(
       `${API}/deals/${dealId}`,
       { stageId },
-      authHeaders
+      getAuthHeaders()
     );
   } catch (err) {
     console.error("Deal stage update failed:", err);

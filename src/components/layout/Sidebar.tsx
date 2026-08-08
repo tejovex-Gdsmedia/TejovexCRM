@@ -1,11 +1,9 @@
 import { NavLink, useNavigate } from "react-router-dom";
 
 import {
-
   LayoutDashboard, Users, Building2, Star,
-
   GitPullRequest, CheckSquare, FileText, UserCircle, LogOut,
-
+  CalendarClock, Mail,
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
@@ -39,6 +37,10 @@ const navItems = [
       { label: "Tasks",            to: "/tasks",     icon: CheckSquare },
 
       { label: "Notes",            to: "/notes",     icon: FileText },
+
+      { label: "Follow-Ups",       to: "/followups",        icon: CalendarClock },
+      
+      { label: "Email Templates",  to: "/email-templates",  icon: Mail },
 
     ],
 

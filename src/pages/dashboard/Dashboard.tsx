@@ -40,6 +40,8 @@ interface Stats {
   newContactsThisMonth: number;
   newDealsThisMonth: number;
   unqualifiedLeads: number;
+  todayFollowUps: number;
+  overdueFollowUps: number;
 }
 
 const statusColors: Record<string, string> = {
@@ -83,8 +85,9 @@ export default function Dashboard() {
       fetch(`${BASE}/deals`,    { headers }).then(r => r.json()),
       fetch(`${BASE}/leads`,    { headers }).then(r => r.json()),
       fetch(`${BASE}/tasks`,    { headers }).then(r => r.json()),
+      fetch(`${BASE}/followups/stats`, { headers }).then(r => r.json()),
     ])
-      .then(([contacts, deals, leads, tasks]) => {
+      .then(([contacts, deals, leads, tasks, followupStats]) => {
         const contactList = Array.isArray(contacts) ? contacts : contacts?.data ?? [];
         const now = new Date();
         const newContactsThisMonth = contactList.filter((c: any) => {
@@ -121,7 +124,10 @@ export default function Dashboard() {
           newContactsThisMonth,
           newDealsThisMonth,
           unqualifiedLeads,
+          todayFollowUps: followupStats?.data?.todayCount ?? 0,
+          overdueFollowUps: followupStats?.data?.overdueCount ?? 0,
         });
+
         setRecentLeads(leadList.slice(0, 5));
         setMyTasks(pendingTasks.slice(0, 6).map((t: any) => ({
           ...t,
@@ -196,6 +202,22 @@ export default function Dashboard() {
           <p className="text-3xl font-bold text-gray-800">{stats?.pendingTasks ?? 0}</p>
           <p className="mt-1 text-xs text-gray-500">{stats?.tasksDueToday ?? 0} due today</p>
         </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+  <div className="flex items-center justify-between mb-3">
+    <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Today's Follow-Ups</p>
+  </div>
+  <p className="text-3xl font-bold text-gray-800">{stats?.todayFollowUps ?? 0}</p>
+  <p className="mt-1 text-xs text-gray-500">due today</p>
+</div>
+
+<div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+  <div className="flex items-center justify-between mb-3">
+    <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Overdue Follow-Ups</p>
+  </div>
+  <p className="text-3xl font-bold text-gray-800">{stats?.overdueFollowUps ?? 0}</p>
+  <p className="mt-1 text-xs text-red-500">needs attention</p>
+</div>
 
       </div>
 

@@ -11,6 +11,8 @@ import Leads           from "./pages/leads/LeadsPage";
 import Deals           from "./pages/deals/DealsPage";
 import Tasks           from "./pages/tasks/TasksPage";
 import Profile         from "./pages/profile/Profile";
+import FollowUpsPage from "./pages/followups/FollowUpsPage";
+import EmailTemplatesPage from "./pages/emailtemplates/EmailTemplatesPage";
 
 export default function App() {
   return (
@@ -30,6 +32,8 @@ export default function App() {
               <Route path="/tasks"     element={<Tasks />} />
               <Route path="/notes"     element={<Notes />} />
               <Route path="/profile"   element={<Profile />} />
+              <Route path="/followups" element={<FollowUpsPage />} />
+              <Route path="/email-templates" element={<EmailTemplatesPage />} />
             </Route>
           </Route>
 

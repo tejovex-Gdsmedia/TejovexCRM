@@ -6,10 +6,7 @@ import { z } from "zod";
 
 
 const API = "https://tejovexcrm-backend.onrender.com/api/v1";
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyYjYwMzdiNC0zZjYzLTRjYzgtODI5NS1jMTYzYmQ5N2RjYjYiLCJlbWFpbCI6InRlY2hnZHNtZWRpYUBnbWFpbC5jb20iLCJyb2xlSWQiOiJhNGI0NDIzYy1iYWZlLTRiYjEtYmIzOC02NTlhYzk1YTA5ODEiLCJpYXQiOjE3ODU0MTQyODgsImV4cCI6MTc4NjAxOTA4OH0.eMs-9-pYlukIqTaWnrKdJDm5qrru897X4GJNPB1LtDU";
-const getAuthHeaders = () => ({
-  headers: { Authorization: `Bearer ${TOKEN}` },
-});
+const getAuthHeaders = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` } });
 const displayName = (val: any): string => {
   if (!val) return "—";
   if (typeof val === "string") return val || "—";
@@ -28,6 +25,8 @@ interface Lead {
   value?: number;
   contactName?: string;
   assignedToName?: string;
+  email?: string;
+  phone?: string;
   assignedTo?: { firstName: string; lastName: string } | null;
   contact?: { firstName: string; lastName: string } | null;
   createdAt?: string;
@@ -49,6 +48,8 @@ const leadSchema = z.object({
   value: z.coerce.number().min(0, "Value must be positive"),
   contactName: z.string().optional(),
   assignedToName: z.string().optional(),
+  email: z.union([z.string().email(), z.literal('')]).optional(),
+  phone: z.string().optional(),
 });
 
 type LeadFormData = z.infer<typeof leadSchema>;
@@ -121,7 +122,8 @@ const fetchLeads = () => {
 
   const openAdd = () => {
     setEditingLead(null);
-       reset({ title: "", status: "NEW", source: "WEBSITE", value: 0, contactName: "", assignedToName: "" });    setIsModalOpen(true);
+       reset({ title: "", status: "NEW", source: "WEBSITE", value: 0, contactName: "", assignedToName: "", email: "", phone: "" });    
+       setIsModalOpen(true);
   };
 
   const openEdit = (lead: Lead) => {
@@ -133,6 +135,8 @@ const fetchLeads = () => {
       value: lead.value ?? 0,
       contactName: lead.contactName || "",
       assignedToName: lead.assignedToName || "",
+      email: lead.email || "",
+      phone: lead.phone || "",
     });
     setIsModalOpen(true);
   };
@@ -145,6 +149,8 @@ const fetchLeads = () => {
       value: data.value,
       contactName: data.contactName || undefined,
       assignedToName: data.assignedToName || undefined,
+      email: data.email || undefined,
+      phone: data.phone || undefined,
     };
     try {
       if (editingLead) {
@@ -413,6 +419,14 @@ const handleAssign = async () => {
                 <label className="text-sm text-gray-600 mb-1 block">Contact</label>
                 <input {...register("contactName")} placeholder="Contact name" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
               </div>
+              <div>
+  <label className="text-sm text-gray-600 mb-1 block">Email</label>
+  <input {...register("email")} type="email" placeholder="lead@company.com" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+</div>
+<div>
+  <label className="text-sm text-gray-600 mb-1 block">Phone</label>
+  <input {...register("phone")} type="text" placeholder="+91 9876543210" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+</div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
                 <button type="submit" className="px-4 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">{editingLead ? "Save Changes" : "Add Lead"}</button>

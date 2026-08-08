@@ -6,13 +6,9 @@ import axios from "axios";
 
 const BASE_URL = "https://tejovexcrm-backend.onrender.com/api/v1";
 
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyYjYwMzdiNC0zZjYzLTRjYzgtODI5NS1jMTYzYmQ5N2RjYjYiLCJlbWFpbCI6InRlY2hnZHNtZWRpYUBnbWFpbC5jb20iLCJyb2xlSWQiOiJhNGI0NDIzYy1iYWZlLTRiYjEtYmIzOC02NTlhYzk1YTA5ODEiLCJpYXQiOjE3ODU0MTQyODgsImV4cCI6MTc4NjAxOTA4OH0.eMs-9-pYlukIqTaWnrKdJDm5qrru897X4GJNPB1LtDU";
-
-const getAuthHeaders = () => ({
-  headers: {
-    Authorization: `Bearer ${TOKEN}`,
-  },
+const getAuthHeaders = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` } 
 });
+
 
 // ── Types ────────────────────────────────────────────────────
 type TaskStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
