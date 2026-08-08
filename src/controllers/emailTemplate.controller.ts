@@ -6,7 +6,7 @@ import { createEmailTemplateSchema, updateEmailTemplateSchema } from '../validat
 export const createEmailTemplate = async (req: Request, res: Response) => {
   try {
     const data = createEmailTemplateSchema.parse(req.body);
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.userId;
     const template = await EmailTemplateService.create(data, userId);
     res.status(201).json({ success: true, message: 'Template created', data: template });
   } catch (err) {
