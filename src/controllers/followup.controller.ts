@@ -6,8 +6,8 @@ import { createFollowUpSchema, updateFollowUpSchema } from '../validators/follow
 export const createFollowUp = async (req: Request, res: Response) => {
   try {
     const data = createFollowUpSchema.parse(req.body);
-    const userId = (req as any).user?.id;
-    const followUp = await FollowUpService.create(data, userId);
+const userId = (req as any).user?.userId;    
+const followUp = await FollowUpService.create(data, userId);
     res.status(201).json({ success: true, message: 'Follow-up created', data: followUp });
   } catch (err) {
     if (err instanceof z.ZodError) {
