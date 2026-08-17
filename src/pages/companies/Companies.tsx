@@ -1,12 +1,51 @@
-import { useState, useEffect } from "react";
-import { Eye, Pencil, Trash2, Plus, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Eye, Pencil, Trash2, Plus, X, Upload, Download } from "lucide-react";
 import {
   getCompanies, createCompany, updateCompany, deleteCompany,
 } from "../../api/companies.api";
 import type { Company, CompanyPayload } from "../../api/companies.api";
+import axios from "axios";
+
+const API = "https://tejovexcrm-backend.onrender.com/api/v1";
+const getAuthHeaders = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` } });
 
 const inputCls = "w-full rounded-lg bg-gray-100 px-3 py-2.5 text-sm outline-none ring-1 ring-gray-200 focus:ring-yellow-500 placeholder:text-gray-400 transition-all";
 const labelCls = "text-[11px] font-semibold uppercase tracking-wider text-gray-500";
+
+// ── CSV Parser ──
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (inQuotes) {
+      if (char === '"') {
+        if (i + 1 < line.length && line[i + 1] === '"') { current += '"'; i++; }
+        else inQuotes = false;
+      } else current += char;
+    } else {
+      if (char === '"') inQuotes = true;
+      else if (char === ",") { result.push(current.trim()); current = ""; }
+      else current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+function parseCSVFile(text: string) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return { headers: [] as string[], rows: [] as string[][] };
+  const headers = parseCSVLine(lines[0]).map((h) => h.toLowerCase());
+  const rows = lines.slice(1).filter((l) => l.trim()).map(parseCSVLine);
+  return { headers, rows };
+}
+
+const CSV_COLUMNS = ["Company Name", "Website", "Industry", "Contacts", "Deals"];
+
+const findColumnIndex = (headers: string[], ...aliases: string[]) =>
+  headers.findIndex((h) => aliases.includes(h));
 
 // ── Add / Edit Modal ─────────────────────────────────────────
 function CompanyModal({
@@ -69,7 +108,7 @@ function CompanyModal({
               Cancel
             </button>
             <button type="submit" disabled={saving} className="flex-1 rounded-lg bg-yellow-600 py-2.5 text-sm font-semibold text-white hover:bg-yellow-700 disabled:opacity-60 transition-colors">
-              {saving ? "Saving…" : initial ? "Save Changes" : "Add Company"}
+              {saving ? "Saving..." : initial ? "Save Changes" : "Add Company"}
             </button>
           </div>
         </form>
@@ -136,6 +175,9 @@ export default function Companies() {
   const [editItem,   setEditItem]   = useState<Company | null>(null);
   const [viewItem,   setViewItem]   = useState<Company | null>(null);
   const [deleteItem, setDeleteItem] = useState<Company | null>(null);
+  const [importing,  setImporting]  = useState(false);
+  const [importResult, setImportResult] = useState<{ created: number; skipped: number; errors: string[] } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchCompanies = async () => {
     try {
@@ -156,6 +198,79 @@ export default function Companies() {
   const handleEdit   = async (data: CompanyPayload) => { if (!editItem) return; await updateCompany(editItem.id, data); await fetchCompanies(); };
   const handleDelete = async () => { if (!deleteItem) return; await deleteCompany(deleteItem.id); setDeleteItem(null); await fetchCompanies(); };
 
+  // ── Import CSV ──
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith(".csv") && !file.name.endsWith(".txt")) {
+      alert("Please upload a .csv file");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    const text = await file.text();
+    const { headers, rows } = parseCSVFile(text);
+
+    const nameIdx     = findColumnIndex(headers, "company name", "name", "company", "companyname");
+    const websiteIdx  = findColumnIndex(headers, "website", "web");
+    const industryIdx = findColumnIndex(headers, "industry");
+    const contactsIdx = findColumnIndex(headers, "contacts");
+    const dealsIdx    = findColumnIndex(headers, "deals");
+
+    if (nameIdx === -1) {
+      alert(`No valid "Company Name" column found.\n\nYour CSV must have these columns:\n${CSV_COLUMNS.join(", ")}`);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    const parsed = rows
+      .map((row) => ({
+        name:     row[nameIdx] || "",
+        website:  websiteIdx  >= 0 ? row[websiteIdx]  || "" : "",
+        industry: industryIdx >= 0 ? row[industryIdx] || "" : "",
+      }))
+      .filter((c) => c.name);
+
+    if (parsed.length === 0) {
+      alert("No valid companies found in CSV.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    if (parsed.length > 500) {
+      alert("Maximum 500 companies per import.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const res = await axios.post(`${API}/companies/import`, { companies: parsed }, getAuthHeaders());
+      setImportResult(res.data?.data);
+      await fetchCompanies();
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Import failed.");
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  // ── Download Sample CSV ──
+  const downloadSampleCSV = () => {
+    const header = CSV_COLUMNS.join(",");
+    const csv = header + "\n";
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "companies-sample.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="p-6">
 
@@ -173,14 +288,43 @@ export default function Companies() {
             Organisations linked to your contacts and deals.
           </p>
         </div>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 rounded-lg bg-yellow-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-yellow-700 transition-colors"
-        >
-          <Plus size={15} />
-          Add Company
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={downloadSampleCSV}
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            <Download size={14} /> Sample CSV
+          </button>
+          <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileChange} />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="flex items-center gap-1.5 rounded-lg bg-gray-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-700 disabled:opacity-50 transition-colors"
+          >
+            <Upload size={14} /> {importing ? "Importing..." : "Import CSV"}
+          </button>
+          <button
+            onClick={() => setShowAdd(true)}
+            className="flex items-center gap-2 rounded-lg bg-yellow-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-yellow-700 transition-colors"
+          >
+            <Plus size={15} />
+            Add Company
+          </button>
+        </div>
       </div>
+
+      {/* Import Result Banner */}
+      {importResult && (
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+          <p className="text-sm text-green-700">
+            ✓ Import complete — <b>{importResult.created}</b> created, <b>{importResult.skipped}</b> skipped
+            {importResult.errors.length > 0 && <span className="ml-1 text-red-500">, {importResult.errors.length} errors</span>}
+          </p>
+          <button onClick={() => setImportResult(null)} className="ml-4 text-green-500 hover:text-green-700">
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -216,7 +360,7 @@ export default function Companies() {
                     <td className="px-5 py-4 text-gray-500">{company.industry || "—"}</td>
                     <td className="px-5 py-4 text-gray-600">{company._count?.contacts ?? 0}</td>
                     <td className="px-5 py-4 text-gray-600">
-                    {(company.wonDealsCount ?? 0) > 0 ? company.wonDealsCount : "—"}
+                      {(company.wonDealsCount ?? 0) > 0 ? company.wonDealsCount : "—"}
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
