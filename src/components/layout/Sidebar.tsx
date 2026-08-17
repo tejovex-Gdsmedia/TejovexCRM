@@ -100,7 +100,7 @@ export default function Sidebar() {
           </div>
           <div className="flex-1 overflow-hidden">
             <p className="truncate text-sm font-medium leading-tight">
-              {user ? ${user.firstName} ${user.lastName} : "Loading…"}
+             {user ? `${user.firstName} ${user.lastName}` : "Loading…"}
             </p>
             <p className="text-[10px] uppercase tracking-widest text-gray-400">
              {typeof user?.role === "object" ? user?.role?.name : user?.role ?? ""}
