@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from "react";import { useForm } from "react-hook-form";
+import { useState, useEffect, useRef } from "react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import axios from "axios"; // ADD: for API calls
+import axios from "axios";
+import { Upload, Download, X } from "lucide-react"; // ADD
 
 // Types
 type DealStatus = "OPEN" | "WON" | "LOST";
@@ -10,11 +12,11 @@ interface Deal {
   id: string;
   title: string;
   value: number;
-  contactName: string | null;                 // CHANGED: contact → contactName
+  contactName: string | null;
   probability: number;
   status: DealStatus;
-  stageId: string;                            // CHANGED: stage name → stageId (UUID)
-  stage: { id: string; name: string };        // ADD: stage object from backend response
+  stageId: string;
+  stage: { id: string; name: string };
 }
 
 interface Stage {
@@ -26,19 +28,17 @@ interface Stage {
 const dealSchema = z.object({
   title:       z.string().min(2, "Title is required"),
   value:       z.coerce.number().min(0, "Value must be positive"),
-  contactName: z.string().optional(),         // CHANGED: contact → contactName, made optional
+  contactName: z.string().optional(),
   probability: z.coerce.number().min(0).max(100),
   status:      z.enum(["OPEN", "WON", "LOST"]),
-  stageId:     z.string().min(1, "Stage is required"), // CHANGED: stage → stageId
+  stageId:     z.string().min(1, "Stage is required"),
 });
 
 type DealFormData = z.infer<typeof dealSchema>;
 
-// Same as ContactsPage.tsx — hardcoded until login is connected
 const API = "https://tejovexcrm-backend.onrender.com/api/v1";
 const getAuthHeaders = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` } });
 
-// Style Maps — UNCHANGED
 const statusStyles: Record<DealStatus, string> = {
   OPEN: "bg-blue-100 text-blue-700",
   WON:  "bg-green-100 text-green-700",
@@ -51,20 +51,74 @@ const progressColors: Record<DealStatus, string> = {
   LOST: "bg-red-400",
 };
 
+// ─── CSV Import Helpers ───
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+function parseCSVFile(text: string): string[][] {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length === 0) return [];
+  return lines.map((l) => parseCSVLine(l));
+}
+
+function findColumnIndex(headers: string[], ...aliases: string[]): number {
+  const lower = headers.map((h) => h.toLowerCase().trim());
+  for (const alias of aliases) {
+    const idx = lower.indexOf(alias.toLowerCase().trim());
+    if (idx !== -1) return idx;
+  }
+  return -1;
+}
+
+const CSV_COLUMNS = ["Deal Name", "Contact", "Value", "Probability", "Stage", "Status"];
+
+const VALID_STATUSES = ["OPEN", "WON", "LOST"];
+
+function normalizeStatus(val: string): string {
+  if (!val) return "OPEN";
+  const cleaned = val.toUpperCase().replace(/[\s-]+/g, "_");
+  return VALID_STATUSES.includes(cleaned) ? cleaned : "OPEN";
+}
+
 export default function DealsPage() {
-  const [deals, setDeals]   = useState<Deal[]>([]);   // CHANGED: removed initialDeals hardcode
-  const [stages, setStages] = useState<Stage[]>([]);  // CHANGED: removed initialStages hardcode
+  const [deals, setDeals]   = useState<Deal[]>([]);
+  const [stages, setStages] = useState<Stage[]>([]);
   const [isModalOpen, setIsModalOpen]         = useState(false);
   const [editingDeal, setEditingDeal]         = useState<Deal | null>(null);
   const [showManageStages, setShowManageStages] = useState(false);
   const [newStageName, setNewStageName]       = useState("");
   const [loading, setLoading] = useState(true);
 
+  // CSV Import state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ created: number; skipped: number; errors: number } | null>(null);
+
   const { register, handleSubmit, reset, formState: { errors } } = useForm<DealFormData>({
     resolver: zodResolver(dealSchema),
   });
 
-  // ADD: fetch deals and pipeline stages from backend on page load
 useEffect(() => {
   Promise.all([
     axios.get(`${API}/deals`, getAuthHeaders()),
@@ -78,15 +132,98 @@ useEffect(() => {
     .finally(() => setLoading(false));
 }, []);
 
+  // ─── CSV Import Handlers ───
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    setImportResult(null);
+
+    try {
+      const text = await file.text();
+      const rows = parseCSVFile(text);
+      if (rows.length < 2) {
+        setImportResult({ created: 0, skipped: 0, errors: 0 });
+        setImporting(false);
+        return;
+      }
+
+      const headers = rows[0];
+      const dataRows = rows.slice(1);
+
+      const nameIdx = findColumnIndex(headers, "deal name", "dealname", "deal_name", "title", "name", "deal");
+      const contactIdx = findColumnIndex(headers, "contact", "contact name", "contactname", "contact_name", "contact person");
+      const valueIdx = findColumnIndex(headers, "value", "deal value", "dealvalue", "deal_value", "amount", "revenue");
+      const probIdx = findColumnIndex(headers, "probability", "prob", "chance", "likelihood");
+      const stageIdx = findColumnIndex(headers, "stage", "pipeline stage", "pipelinestage", "pipeline_stage", "deal stage");
+      const statusIdx = findColumnIndex(headers, "status", "deal status", "dealstatus", "deal_status");
+
+      const parsed = dataRows
+        .filter((row) => row.some((cell) => cell.trim() !== ""))
+        .map((row) => {
+          const stageName = stageIdx !== -1 ? row[stageIdx]?.trim() : "";
+          const matchedStage = stages.find((s) => s.name.toLowerCase() === stageName.toLowerCase());
+          return {
+            title: nameIdx !== -1 ? row[nameIdx]?.trim() || "" : "",
+            contactName: contactIdx !== -1 ? row[contactIdx]?.trim() || "" : "",
+            value: valueIdx !== -1 ? parseFloat(row[valueIdx]?.replace(/[^0-9.]/g, "")) || 0 : 0,
+            probability: probIdx !== -1 ? Math.min(100, Math.max(0, parseInt(row[probIdx]) || 0)) : 0,
+            stageId: matchedStage?.id || stages[0]?.id || "",
+            status: statusIdx !== -1 ? normalizeStatus(row[statusIdx]) : "OPEN",
+          };
+        });
+
+      // Filter out rows with empty title
+      const validDeals = parsed.filter((d) => d.title.trim() !== "");
+
+      const res = await axios.post(
+        `${API}/deals/import`,
+        { deals: validDeals },
+        getAuthHeaders()
+      );
+
+      // Refresh deals list
+      const dealsRes = await axios.get(`${API}/deals`, getAuthHeaders());
+      setDeals(Array.isArray(dealsRes.data) ? dealsRes.data : dealsRes.data.data || []);
+
+      setImportResult({
+        created: res.data?.created ?? validDeals.length,
+        skipped: res.data?.skipped ?? 0,
+        errors: res.data?.errors ?? 0,
+      });
+    } catch (err: any) {
+      setImportResult({
+        created: 0,
+        skipped: 0,
+        errors: 1,
+      });
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const downloadSampleCSV = () => {
+    const header = CSV_COLUMNS.join(",");
+    const blob = new Blob([header], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "deals_sample.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const openAdd = () => {
     setEditingDeal(null);
     reset({
       title:       "",
       value:       0,
-      contactName: "",                    // CHANGED: contact → contactName
+      contactName: "",
       probability: 0,
       status:      "OPEN",
-      stageId:     stages[0]?.id || "",  // CHANGED: stage name → stageId
+      stageId:     stages[0]?.id || "",
     });
     setIsModalOpen(true);
   };
@@ -96,21 +233,20 @@ useEffect(() => {
     reset({
       title:       deal.title,
       value:       deal.value,
-      contactName: deal.contactName || "", // CHANGED: contact → contactName
+      contactName: deal.contactName || "",
       probability: deal.probability,
       status:      deal.status,
-      stageId:     deal.stageId,          // CHANGED: stage name → stageId
+      stageId:     deal.stageId,
     });
     setIsModalOpen(true);
   };
 
-  // CHANGED: onSubmit now calls backend API instead of updating local state
   const onSubmit = async (data: DealFormData) => {
     try {
       const payload = {
         title:       data.title,
         value:       data.value,
-        contactName: data.contactName || undefined, // plain text, no lookup needed
+        contactName: data.contactName || undefined,
         probability: data.probability,
         status:      data.status,
         stageId:     data.stageId,
@@ -132,7 +268,6 @@ useEffect(() => {
     }
   };
 
-  // CHANGED: handleDelete now calls backend API
   const handleDelete = async (id: string) => {
     if (confirm("Delete this deal?")) {
       try {
@@ -144,7 +279,6 @@ useEffect(() => {
     }
   };
 
-  // Manage Stages handlers — local state only (stages are seeded in DB)
 const handleRemoveStage = async (stageId: string) => {
     const hasDeals = deals.some((d) => d.stageId === stageId);
     if (hasDeals) {
@@ -152,17 +286,14 @@ const handleRemoveStage = async (stageId: string) => {
       return;
     }
 
-    // Calculate updated list first
     const updatedStages = stages.filter((s) => s.id !== stageId);
 
     try {
-      // Sync to backend — send only names
       const res = await axios.post(
         `${API}/pipeline-stages/sync`,
         { stages: updatedStages.map((s) => s.name) },
         getAuthHeaders()
       );
-      // Update local state with real DB response (has proper IDs)
       const data = Array.isArray(res.data) ? res.data : res.data.data || [];
       setStages(data);
     } catch (err) {
@@ -174,17 +305,14 @@ const handleRemoveStage = async (stageId: string) => {
 const handleAddStage = async () => {
     if (!newStageName.trim()) return;
 
-    // Calculate updated list first
     const updatedStages = [...stages, { id: "", name: newStageName.trim() }];
 
     try {
-      // Sync to backend — send only names
       const res = await axios.post(
         `${API}/pipeline-stages/sync`,
         { stages: updatedStages.map((s) => s.name) },
         getAuthHeaders()
       );
-      // Update local state with real DB response (has proper IDs)
       const data = Array.isArray(res.data) ? res.data : res.data.data || [];
       setStages(data);
       setNewStageName("");
@@ -193,7 +321,6 @@ const handleAddStage = async () => {
       alert("Failed to add stage. Try again.");
     }
   };
-
 
   const dragStageIndex = useRef<number | null>(null);
   const dragDealId = useRef<string | null>(null);
@@ -214,10 +341,8 @@ const handleDrop = async (index: number) => {
   reordered.splice(index, 0, moved);
   dragStageIndex.current = null;
 
-  // Update local state immediately
   setStages(reordered);
 
-  // Save new order to backend
   try {
     await axios.patch(
       `${API}/pipeline-stages/reorder`,
@@ -240,12 +365,10 @@ const handleDealDrop = async (e: React.DragEvent, stageId: string) => {
   const dealId = dragDealId.current;
   dragDealId.current = null;
 
-  // Update local state immediately
   setDeals(prev =>
     prev.map(d => d.id === dealId ? { ...d, stageId } : d)
   );
 
-  // Save to backend
   try {
     await axios.put(
       `${API}/deals/${dealId}`,
@@ -261,13 +384,41 @@ const handleDealDrop = async (e: React.DragEvent, stageId: string) => {
   return (
     <div className="p-6 max-w-full">
 
-      {/* Header — UNCHANGED */}
+      {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Deals — Pipeline</h1>
           <p className="text-sm text-gray-500 mt-1">Kanban view of your sales pipeline across stages.</p>
         </div>
         <div className="flex gap-2">
+          {/* Import CSV Button */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all shadow-sm hover:shadow-md active:scale-[0.97] disabled:opacity-60"
+          >
+            <Upload size={14} />
+            {importing ? "Importing..." : "Import CSV"}
+          </button>
+
+          {/* Sample CSV Button */}
+          <button
+            onClick={downloadSampleCSV}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm active:scale-[0.97]"
+          >
+            <Download size={14} className="text-blue-500" />
+            Sample CSV
+          </button>
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.txt"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+
           <button
             onClick={() => setShowManageStages(!showManageStages)}
             className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${showManageStages ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}
@@ -283,6 +434,26 @@ const handleDealDrop = async (e: React.DragEvent, stageId: string) => {
         </div>
       </div>
 
+      {/* Import Result Banner */}
+      {importResult && (
+        <div className={`flex items-center justify-between rounded-xl border px-4 py-3 text-sm mb-6 ${
+          importResult.errors > 0
+            ? "bg-red-50 border-red-200 text-red-700"
+            : "bg-green-50 border-green-200 text-green-700"
+        }`}>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">
+              {importResult.errors > 0 ? "Import completed with errors" : "Import successful"}
+            </span>
+            <span className="text-xs opacity-80">
+              {importResult.created} created · {importResult.skipped} skipped · {importResult.errors} errors
+            </span>
+          </div>
+          <button onClick={() => setImportResult(null)} className="p-1 hover:bg-black/5 rounded-md transition-colors">
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Loading Spinner */}
 {loading ? (
@@ -292,12 +463,10 @@ const handleDealDrop = async (e: React.DragEvent, stageId: string) => {
 ) : (
   <>
 
-
-
       {/* Kanban Board */}
       <div className="flex gap-4 overflow-x-auto pb-4">
         {stages.map((stage) => {
-          const stageDeals = deals.filter((d) => d.stageId === stage.id); // CHANGED: d.stage === name → d.stageId === id
+          const stageDeals = deals.filter((d) => d.stageId === stage.id);
           return (
             <div
   key={stage.id}
@@ -335,7 +504,7 @@ const handleDealDrop = async (e: React.DragEvent, stageId: string) => {
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-500">{deal.contactName || "—"}</p> {/* CHANGED: deal.contact → deal.contactName */}
+                        <p className="text-xs text-gray-500">{deal.contactName || "—"}</p>
                         <p className="text-xs text-gray-400">{deal.probability}%</p>
                       </div>
 
@@ -359,7 +528,7 @@ const handleDealDrop = async (e: React.DragEvent, stageId: string) => {
         })}
       </div>
 
-      {/* Manage Stages — UNCHANGED except filter fix */}
+      {/* Manage Stages */}
       {showManageStages && (
         <div className="mt-8">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Manage Pipeline Stages</h2>
@@ -379,7 +548,7 @@ const handleDealDrop = async (e: React.DragEvent, stageId: string) => {
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="text-xs text-gray-500">
-                    {deals.filter((d) => d.stageId === stage.id).length} deal{deals.filter((d) => d.stageId === stage.id).length !== 1 ? "s" : ""} {/* CHANGED */}
+                    {deals.filter((d) => d.stageId === stage.id).length} deal{deals.filter((d) => d.stageId === stage.id).length !== 1 ? "s" : ""}
                   </span>
                   <button
                     onClick={() => handleRemoveStage(stage.id)}
@@ -427,7 +596,7 @@ const handleDealDrop = async (e: React.DragEvent, stageId: string) => {
               </div>
               <div>
                 <label className="text-sm text-gray-600 mb-1 block">Contact</label>
-                <input {...register("contactName")} placeholder="Contact name" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /> {/* CHANGED: register("contact") → register("contactName") */}
+                <input {...register("contactName")} placeholder="Contact name" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
               </div>
               <div>
                 <label className="text-sm text-gray-600 mb-1 block">Probability (%)</label>
@@ -443,7 +612,7 @@ const handleDealDrop = async (e: React.DragEvent, stageId: string) => {
               </div>
               <div>
                 <label className="text-sm text-gray-600 mb-1 block">Stage</label>
-                <select {...register("stageId")} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"> {/* CHANGED: register("stage") → register("stageId") */}
+                <select {...register("stageId")} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
                   {stages.map((s) => (
                     <option key={s.id} value={s.id}>{s.name}</option> 
                   ))}
@@ -456,8 +625,7 @@ const handleDealDrop = async (e: React.DragEvent, stageId: string) => {
             </form>
           </div>
         </div>
-      
-)}
+      )}
 
   </>
 )}
