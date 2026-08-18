@@ -1,324 +1,333 @@
-generator client {
-  provider = "prisma-client-js"
+      generator client {
+        provider = "prisma-client-js"
+      }
+
+      datasource db {
+        provider  = "postgresql"
+        url       = env("DATABASE_URL")
+        directUrl = env("DIRECT_URL")
+      }
+      model Role {
+        id          String   @id @default(uuid())
+        name        String   @unique
+        description String?
+        createdAt   DateTime @default(now())
+        users       User[]
+      }
+
+      model User {
+        id            String     @id @default(uuid())
+        email         String     @unique
+        password      String
+        firstName     String
+        lastName      String
+        phone         String?
+        avatar        String?
+        isActive      Boolean    @default(true)
+        roleId        String
+        createdAt     DateTime   @default(now())
+        updatedAt     DateTime   @updatedAt
+        deletedAt     DateTime?
+        activities    Activity[]
+        assignedDeals Deal[]     @relation("AssignedDeals")
+        assignedLeads Lead[]     @relation("AssignedLeads")
+        createdLeads  Lead[]     @relation("CreatedLeads")
+        notes         Note[]
+        assignedTasks Task[]     @relation("AssignedTasks")
+        createdTasks  Task[]     @relation("CreatedTasks")
+        role          Role       @relation(fields: [roleId], references: [id])
+        followUpsAssigned     FollowUp[]      @relation("FollowUpAssignedTo")
+        followUpsCreated      FollowUp[]      @relation("FollowUpCreatedBy")
+        emailTemplatesCreated EmailTemplate[] @relation("EmailTemplateCreatedBy")
+        createdCompanies  Company[]  @relation("CreatedCompanies")
+      createdContacts   Contact[]  @relation("CreatedContacts")
+      createdDeals      Deal[]     @relation("CreatedDeals")
+      predictions       Prediction[]
+      }
+
+      model Company {
+        id        String    @id @default(uuid())
+        name      String
+        website   String?
+        industry  String?
+        createdAt DateTime  @default(now())
+        updatedAt DateTime  @updatedAt
+        deletedAt DateTime?
+        createdById String?
+        createdBy   User?    @relation("CreatedCompanies", fields: [createdById], references: [id])
+        contacts  Contact[]
+        deals     Deal[]
+      }
+
+      model Contact {
+        id        String    @id @default(uuid())
+        firstName String
+        lastName  String
+        email     String?   @unique
+        phone     String?
+        companyId String?
+        createdAt DateTime  @default(now())
+        updatedAt DateTime  @updatedAt
+        deletedAt DateTime?
+        createdById String?
+      createdBy   User?    @relation("CreatedContacts", fields: [createdById], references: [id])
+        company   Company?  @relation(fields: [companyId], references: [id])
+        deals     Deal[]
+        leads     Lead[]
+        notes     Note[]
+        followUps  FollowUp[]
+      }
+
+      model Lead {
+        id           String      @id @default(uuid())
+        title        String
+        company        String? 
+        status       LeadStatus  @default(NEW)
+        source       LeadSource?
+        value          Float?
+        email        String?
+        phone        String?
+        contactName    String?
+        assignedToName String?
+        contactId    String?
+        assignedToId String?
+        createdById  String?
+        createdAt    DateTime    @default(now())
+        updatedAt    DateTime    @updatedAt
+        deletedAt    DateTime?
+        whatsappSentAt DateTime?
+        assignedTo   User?       @relation("AssignedLeads", fields: [assignedToId], references: [id])
+        contact      Contact?    @relation(fields: [contactId], references: [id])
+        createdBy    User?       @relation("CreatedLeads", fields: [createdById], references: [id])
+        notes        Note[]
+        tasks        Task[]
+        followUps  FollowUp[]
+      }
+
+      model PipelineStage {
+        id    String @id @default(uuid())
+        name  String
+        order Int
+        deals Deal[]
+      }
+
+      model Deal {
+        id                String        @id @default(uuid())
+        title             String
+        value             Float?
+        probability       Int?
+        expectedCloseDate DateTime?
+        status            DealStatus    @default(OPEN)
+        stageId           String?
+        contactId         String?
+        contactName       String?       // ← ADD THIS LINE ONLY
+        companyId         String?
+        assignedToId      String?
+        createdAt         DateTime      @default(now())
+        updatedAt         DateTime      @updatedAt
+        deletedAt         DateTime?
+        createdById String?
+      createdBy   User?    @relation("CreatedDeals", fields: [createdById], references: [id])
+        assignedTo        User?         @relation("AssignedDeals", fields: [assignedToId], references: [id])
+        company           Company?      @relation(fields: [companyId], references: [id])
+        contact           Contact?      @relation(fields: [contactId], references: [id])
+        stage             PipelineStage? @relation(fields: [stageId], references: [id])
+        notes             Note[]
+        tasks             Task[]
+        followUps  FollowUp[]
+      }
+
+      model Task {
+        id           String     @id @default(uuid())
+        title        String
+        description  String?
+        status       TaskStatus @default(PENDING)
+        priority     Priority   @default(MEDIUM)
+        dueDate      DateTime?
+        assignedToName String?
+        assignedToId String?
+        createdById  String?
+        leadId       String?
+        dealId       String?
+        createdAt    DateTime   @default(now())
+        updatedAt    DateTime   @updatedAt
+        deletedAt    DateTime?
+        assignedTo   User?      @relation("AssignedTasks", fields: [assignedToId], references: [id])
+        createdBy    User?      @relation("CreatedTasks", fields: [createdById], references: [id])
+        deal         Deal?      @relation(fields: [dealId], references: [id])
+        lead         Lead?      @relation(fields: [leadId], references: [id])
+      }
+
+      model Note {
+        id          String   @id @default(uuid())
+        content     String
+        createdById String?
+        contactId   String?
+        leadId      String?
+        dealId      String?
+        createdAt   DateTime @default(now())
+        updatedAt   DateTime @updatedAt
+        contact     Contact? @relation(fields: [contactId], references: [id])
+        createdBy   User?    @relation(fields: [createdById], references: [id])
+        deal        Deal?    @relation(fields: [dealId], references: [id])
+        lead        Lead?    @relation(fields: [leadId], references: [id])
+      }
+
+      model Activity {
+        id          String   @id @default(uuid())
+        action      String
+        description String?
+        entityType  String
+        entityId    String
+        userId      String?
+        createdAt   DateTime @default(now())
+        user        User?    @relation(fields: [userId], references: [id])
+      }
+
+      model FollowUp {
+        id             String           @id @default(cuid())
+        title          String
+        type           FollowUpType     @default(CALL)
+        status         FollowUpStatus   @default(PENDING)
+        priority       FollowUpPriority @default(MEDIUM)
+        dueDate        DateTime
+        scheduledAt    DateTime?
+        completionNote String?
+        completedAt    DateTime?
+
+        emailStage      EmailStage?
+        emailTemplateId String?
+        emailTemplate   EmailTemplate?  @relation(fields: [emailTemplateId], references: [id])
+        emailSubject    String?
+        emailBody       String?         @db.Text
+        emailSentAt     DateTime?
+
+        leadId    String?
+        lead      Lead?    @relation(fields: [leadId], references: [id])
+        contactId String?
+        contact   Contact? @relation(fields: [contactId], references: [id])
+        dealId    String?
+        deal      Deal?    @relation(fields: [dealId], references: [id])
+
+        assignedToId String?
+        assignedTo   User?  @relation("FollowUpAssignedTo", fields: [assignedToId], references: [id])
+        createdById  String
+        createdBy    User   @relation("FollowUpCreatedBy", fields: [createdById], references: [id])
+
+        createdAt DateTime  @default(now())
+        updatedAt DateTime  @updatedAt
+        deletedAt DateTime?
+      }
+
+      model EmailTemplate {
+        id       String     @id @default(cuid())
+        name     String
+        stage    EmailStage
+        subject  String
+        body     String     @db.Text
+        isActive Boolean    @default(true)
+
+        createdById String
+        createdBy   User   @relation("EmailTemplateCreatedBy", fields: [createdById], references: [id])
+
+        followUps FollowUp[]
+
+        createdAt DateTime  @default(now())
+        updatedAt DateTime  @updatedAt
+        deletedAt DateTime?
+      }
+
+      model Prediction {
+        id         String   @id @default(cuid())
+        entityType String   // "DEAL" | "LEAD" | "FOLLOW_UP"
+        entityId   String
+        type       String   // "WIN_PROBABILITY" | "CONVERSION_SCORE" | "CHURN_RISK" | "REVENUE_FORECAST"
+        score      Float?
+        label      String?
+        reasoning  String?
+        metadata   Json?
+        createdAt  DateTime @default(now())
+        updatedAt  DateTime @updatedAt
+        userId     String
+        user       User     @relation(fields: [userId], references: [id])
+      }
+
+      model CrmSettings {
+  id                    String  @id @default("global")
+  whatsappEnabled       Boolean @default(false)
+  whatsappPhoneNumberId String  @default("")
+  whatsappAccessToken   String  @default("")
+  whatsappTemplateName  String  @default("")
 }
 
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-}
-model Role {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  users       User[]
-}
+      enum LeadStatus {
+        NEW
+        CONTACTED
+        QUALIFIED
+        UNQUALIFIED
+        CONVERTED
+      }
 
-model User {
-  id            String     @id @default(uuid())
-  email         String     @unique
-  password      String
-  firstName     String
-  lastName      String
-  phone         String?
-  avatar        String?
-  isActive      Boolean    @default(true)
-  roleId        String
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  deletedAt     DateTime?
-  activities    Activity[]
-  assignedDeals Deal[]     @relation("AssignedDeals")
-  assignedLeads Lead[]     @relation("AssignedLeads")
-  createdLeads  Lead[]     @relation("CreatedLeads")
-  notes         Note[]
-  assignedTasks Task[]     @relation("AssignedTasks")
-  createdTasks  Task[]     @relation("CreatedTasks")
-  role          Role       @relation(fields: [roleId], references: [id])
-  followUpsAssigned     FollowUp[]      @relation("FollowUpAssignedTo")
-  followUpsCreated      FollowUp[]      @relation("FollowUpCreatedBy")
-  emailTemplatesCreated EmailTemplate[] @relation("EmailTemplateCreatedBy")
-  createdCompanies  Company[]  @relation("CreatedCompanies")
-createdContacts   Contact[]  @relation("CreatedContacts")
-createdDeals      Deal[]     @relation("CreatedDeals")
-predictions       Prediction[]
-}
+      enum LeadSource {
+        WEBSITE
+        REFERRAL
+        INDIAMART
+        WHATSAPP
+        EMAIL
+        COLD_CALL
+        OTHER
+      }
 
-model Company {
-  id        String    @id @default(uuid())
-  name      String
-  website   String?
-  industry  String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-  createdById String?
-  createdBy   User?    @relation("CreatedCompanies", fields: [createdById], references: [id])
-  contacts  Contact[]
-  deals     Deal[]
-}
+      enum DealStatus {
+        OPEN
+        WON
+        LOST
+      }
 
-model Contact {
-  id        String    @id @default(uuid())
-  firstName String
-  lastName  String
-  email     String?   @unique
-  phone     String?
-  companyId String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-  createdById String?
-createdBy   User?    @relation("CreatedContacts", fields: [createdById], references: [id])
-  company   Company?  @relation(fields: [companyId], references: [id])
-  deals     Deal[]
-  leads     Lead[]
-  notes     Note[]
-  followUps  FollowUp[]
-}
+      enum TaskStatus {
+        PENDING
+        IN_PROGRESS
+        COMPLETED
+        CANCELLED
+      }
 
-model Lead {
-  id           String      @id @default(uuid())
-  title        String
-  company        String? 
-  status       LeadStatus  @default(NEW)
-  source       LeadSource?
-  value          Float?
-  email        String?
-  phone        String?
-  contactName    String?
-  assignedToName String?
-  contactId    String?
-  assignedToId String?
-  createdById  String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  deletedAt    DateTime?
-  assignedTo   User?       @relation("AssignedLeads", fields: [assignedToId], references: [id])
-  contact      Contact?    @relation(fields: [contactId], references: [id])
-  createdBy    User?       @relation("CreatedLeads", fields: [createdById], references: [id])
-  notes        Note[]
-  tasks        Task[]
-  followUps  FollowUp[]
-}
-
-model PipelineStage {
-  id    String @id @default(uuid())
-  name  String
-  order Int
-  deals Deal[]
-}
-
-model Deal {
-  id                String        @id @default(uuid())
-  title             String
-  value             Float?
-  probability       Int?
-  expectedCloseDate DateTime?
-  status            DealStatus    @default(OPEN)
-  stageId           String?
-  contactId         String?
-  contactName       String?       // ← ADD THIS LINE ONLY
-  companyId         String?
-  assignedToId      String?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  deletedAt         DateTime?
-  createdById String?
-createdBy   User?    @relation("CreatedDeals", fields: [createdById], references: [id])
-  assignedTo        User?         @relation("AssignedDeals", fields: [assignedToId], references: [id])
-  company           Company?      @relation(fields: [companyId], references: [id])
-  contact           Contact?      @relation(fields: [contactId], references: [id])
-  stage             PipelineStage? @relation(fields: [stageId], references: [id])
-  notes             Note[]
-  tasks             Task[]
-  followUps  FollowUp[]
-}
-
-model Task {
-  id           String     @id @default(uuid())
-  title        String
-  description  String?
-  status       TaskStatus @default(PENDING)
-  priority     Priority   @default(MEDIUM)
-  dueDate      DateTime?
-  assignedToName String?
-  assignedToId String?
-  createdById  String?
-  leadId       String?
-  dealId       String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  deletedAt    DateTime?
-  assignedTo   User?      @relation("AssignedTasks", fields: [assignedToId], references: [id])
-  createdBy    User?      @relation("CreatedTasks", fields: [createdById], references: [id])
-  deal         Deal?      @relation(fields: [dealId], references: [id])
-  lead         Lead?      @relation(fields: [leadId], references: [id])
-}
-
-model Note {
-  id          String   @id @default(uuid())
-  content     String
-  createdById String?
-  contactId   String?
-  leadId      String?
-  dealId      String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  contact     Contact? @relation(fields: [contactId], references: [id])
-  createdBy   User?    @relation(fields: [createdById], references: [id])
-  deal        Deal?    @relation(fields: [dealId], references: [id])
-  lead        Lead?    @relation(fields: [leadId], references: [id])
-}
-
-model Activity {
-  id          String   @id @default(uuid())
-  action      String
-  description String?
-  entityType  String
-  entityId    String
-  userId      String?
-  createdAt   DateTime @default(now())
-  user        User?    @relation(fields: [userId], references: [id])
-}
-
-model FollowUp {
-  id             String           @id @default(cuid())
-  title          String
-  type           FollowUpType     @default(CALL)
-  status         FollowUpStatus   @default(PENDING)
-  priority       FollowUpPriority @default(MEDIUM)
-  dueDate        DateTime
-  scheduledAt    DateTime?
-  completionNote String?
-  completedAt    DateTime?
-
-  emailStage      EmailStage?
-  emailTemplateId String?
-  emailTemplate   EmailTemplate?  @relation(fields: [emailTemplateId], references: [id])
-  emailSubject    String?
-  emailBody       String?         @db.Text
-  emailSentAt     DateTime?
-
-  leadId    String?
-  lead      Lead?    @relation(fields: [leadId], references: [id])
-  contactId String?
-  contact   Contact? @relation(fields: [contactId], references: [id])
-  dealId    String?
-  deal      Deal?    @relation(fields: [dealId], references: [id])
-
-  assignedToId String?
-  assignedTo   User?  @relation("FollowUpAssignedTo", fields: [assignedToId], references: [id])
-  createdById  String
-  createdBy    User   @relation("FollowUpCreatedBy", fields: [createdById], references: [id])
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-}
-
-model EmailTemplate {
-  id       String     @id @default(cuid())
-  name     String
-  stage    EmailStage
-  subject  String
-  body     String     @db.Text
-  isActive Boolean    @default(true)
-
-  createdById String
-  createdBy   User   @relation("EmailTemplateCreatedBy", fields: [createdById], references: [id])
-
-  followUps FollowUp[]
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-}
-
-model Prediction {
-  id         String   @id @default(cuid())
-  entityType String   // "DEAL" | "LEAD" | "FOLLOW_UP"
-  entityId   String
-  type       String   // "WIN_PROBABILITY" | "CONVERSION_SCORE" | "CHURN_RISK" | "REVENUE_FORECAST"
-  score      Float?
-  label      String?
-  reasoning  String?
-  metadata   Json?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
-}
-
-enum LeadStatus {
-  NEW
-  CONTACTED
-  QUALIFIED
-  UNQUALIFIED
-  CONVERTED
-}
-
-enum LeadSource {
-  WEBSITE
-  REFERRAL
-  INDIAMART
-  WHATSAPP
-  EMAIL
-  COLD_CALL
-  OTHER
-}
-
-enum DealStatus {
-  OPEN
-  WON
-  LOST
-}
-
-enum TaskStatus {
-  PENDING
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-}
-
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-}
+      enum Priority {
+        LOW
+        MEDIUM
+        HIGH
+      }
 
 
-enum FollowUpType {
-  CALL
-  EMAIL
-  MEETING
-  WHATSAPP
-  SMS
-}
+      enum FollowUpType {
+        CALL
+        EMAIL
+        MEETING
+        WHATSAPP
+        SMS
+      }
 
-enum FollowUpStatus {
-  PENDING
-  COMPLETED
-  OVERDUE
-  SKIPPED
-}
+      enum FollowUpStatus {
+        PENDING
+        COMPLETED
+        OVERDUE
+        SKIPPED
+      }
 
-enum FollowUpPriority {
-  LOW
-  MEDIUM
-  HIGH
-}
+      enum FollowUpPriority {
+        LOW
+        MEDIUM
+        HIGH
+      }
 
-enum EmailStage {
-  INITIAL_OUTREACH
-  FOLLOWUP_1
-  FOLLOWUP_2
-  FOLLOWUP_3
-  REENGAGEMENT
-  POST_MEETING
-  PROPOSAL_SENT
-  CLOSING
-  CUSTOM
-}
+      enum EmailStage {
+        INITIAL_OUTREACH
+        FOLLOWUP_1
+        FOLLOWUP_2
+        FOLLOWUP_3
+        REENGAGEMENT
+        POST_MEETING
+        PROPOSAL_SENT
+        CLOSING
+        CUSTOM
+      }
 

@@ -2,6 +2,7 @@ import prisma from '../config/database'; // adjust this import to match how you 
 
 const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL!;
 const N8N_WEBHOOK_SECRET = process.env.N8N_WEBHOOK_SECRET!;
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 
 export interface ChatContext {
   entityType?: 'DEAL' | 'LEAD' | 'FOLLOW_UP';
@@ -34,8 +35,11 @@ const response = await fetch(N8N_WEBHOOK_URL, {
     'Content-Type': 'application/json',
     'x-webhook-secret': N8N_WEBHOOK_SECRET,
   },
+
   body: JSON.stringify({ message, context }),
 });
+
+
 
 const data = await response.json() as { reply: string; predictions: PredictionResult[] };
 const { reply, predictions = [] } = data;
@@ -71,4 +75,47 @@ const { reply, predictions = [] } = data;
   }
 
   return { reply, predictions };
+};
+
+
+export const predictDeal = async (deal: {
+  id: string;
+  title: string;
+  value: number;
+  probability: number;
+  stage: string;
+  follow_up_count?: number;
+  days_in_stage?: number;
+  has_note?: number;
+  has_task?: number;
+  assigned?: number;
+}) => {
+  const response = await fetch(`${ML_SERVICE_URL}/predict/deal`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(deal),
+  });
+  return await response.json();
+};
+
+export const predictLead = async (lead: {
+  id: string;
+  title: string;
+  value: number;
+  source: string;
+  follow_up_count?: number;
+  days_since_created?: number;
+  assigned?: number;
+}) => {
+  const response = await fetch(`${ML_SERVICE_URL}/predict/lead`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(lead),
+  });
+  return await response.json();
+};
+
+export const predictRevenue = async () => {
+  const response = await fetch(`${ML_SERVICE_URL}/predict/revenue`);
+  return await response.json();
 };

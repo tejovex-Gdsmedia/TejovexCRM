@@ -1,6 +1,8 @@
 import prisma from '../config/database';
 import { AppError } from '../middleware/errorhandler';
 import { CreateLeadInput, UpdateLeadInput, UpdateLeadStatusInput } from '../validators/lead.validator';
+import { whatsAppService } from './whatsapp.service';
+import { settingsService } from './settings.service';
 
 export class LeadService {
 
@@ -76,7 +78,7 @@ where: { id, deletedAt: null, createdById: userId },
   }
 
   async create(data: CreateLeadInput, createdById: string) {
-    return prisma.lead.create({
+    const lead = await prisma.lead.create({
       data: {
         ...data,
         createdById,
@@ -93,6 +95,26 @@ where: { id, deletedAt: null, createdById: userId },
         },
       },
     });
+
+    // WhatsApp auto-send — runs after lead is safely created
+    try {
+      const settings = await settingsService.getSettings();
+      if (settings.whatsappEnabled && lead.phone) {
+        await whatsAppService.sendTemplateMessage(
+          lead.phone,
+          lead.contactName || lead.title
+        );
+        await prisma.lead.update({
+          where: { id: lead.id },
+          data: { whatsappSentAt: new Date() },
+        });
+      }
+    } catch (err) {
+      // Never block lead creation if WhatsApp fails
+      console.error('⚠️ WhatsApp send failed (lead still created):', err);
+    }
+
+    return lead;
   }
 
 async update(id: string, userId: string, data: UpdateLeadInput) {

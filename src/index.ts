@@ -17,6 +17,7 @@ import pipelineStageRoutes from './routes/pipelineStage.routes';
 import userRoutes from './routes/user.routes';
 import chatRoutes from './routes/chat.routes';
 import predictionRoutes from './routes/predictions.routes';
+import settingsRoutes from './routes/settings.routes';
 
 
 const app = express();
@@ -39,6 +40,7 @@ app.use('/api/v1/followups', followupRoutes);
 app.use('/api/v1/email-templates', emailTemplateRoutes);
 app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/predictions', predictionRoutes);
+app.use('/api/v1/settings', settingsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
