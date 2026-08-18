@@ -2,9 +2,9 @@ import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import {
-  LayoutDashboard, Users, Building2, Star,
-  GitPullRequest, CheckSquare, FileText, UserCircle, LogOut,
-  CalendarClock, Mail, BarChart3, X,
+  LayoutDashboard, Users, Building2, Star,
+  GitPullRequest, CheckSquare, FileText, UserCircle, LogOut,
+  CalendarClock, Mail, BarChart3, X, Settings,
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
@@ -30,10 +30,13 @@ const navItems = [
       { label: "Analytics", to: "/analytics", icon: BarChart3 },
     ],
   },
-  {
-    section: "ACCOUNT",
-    items: [{ label: "Profile", to: "/profile", icon: UserCircle }],
-  },
+  {
+    section: "ACCOUNT",
+    items: [
+      { label: "Profile",  to: "/profile",  icon: UserCircle },
+      { label: "Settings", to: "/settings", icon: Settings  },
+    ],
+  },
 ];
 
 
