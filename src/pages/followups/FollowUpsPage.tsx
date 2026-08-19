@@ -201,7 +201,7 @@ export default function FollowUpsPage() {
         leadId: form.leadId || undefined,
         contactId: form.contactId || undefined,
       };
-      if (form.scheduledAt) payload.scheduledAt = form.scheduledAt;
+      if (form.scheduledAt) payload.scheduledAt = new Date(form.scheduledAt).toISOString();
       if (form.type === 'EMAIL') {
         if (form.emailStage) payload.emailStage = form.emailStage;
         if (form.emailTemplateId) payload.emailTemplateId = form.emailTemplateId;
@@ -257,7 +257,7 @@ const handleEdit = async () => {
         title: form.title,
         priority: form.priority,
         dueDate: form.dueDate,
-        scheduledAt: form.scheduledAt || undefined,
+        scheduledAt: form.scheduledAt ? new Date(form.scheduledAt).toISOString() : undefined,
         emailSubject: form.emailSubject || undefined,
         emailBody: form.emailBody || undefined,
       },
