@@ -5,6 +5,7 @@ export const UpdateSettingsSchema = z.object({
   whatsappPhoneNumberId: z.string().optional(),
   whatsappAccessToken: z.string().optional(),
   whatsappTemplateName: z.string().optional(),
+    smtpFromEmail: z.string().optional(),
 });
 
 export type UpdateSettingsInput = z.infer<typeof UpdateSettingsSchema>;

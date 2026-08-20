@@ -1,8 +1,10 @@
+import prisma from '../config/database';
 export const sendEmail = async (
   to: string,
   subject: string,
   body: string
 ): Promise<void> => {
+    const settings = await prisma.crmSettings.findUnique({ where: { id: 'global' } });
   const response = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
@@ -13,7 +15,7 @@ export const sendEmail = async (
     body: JSON.stringify({
       sender: {
         name: process.env.SMTP_FROM_NAME || 'TejovexCRM',
-        email: process.env.SMTP_FROM_EMAIL || 'techgdsmedia@gmail.com',
+        email: settings?.smtpFromEmail || process.env.SMTP_FROM_EMAIL || 'techgdsmedia@gmail.com',
       },
       to: [{ email: to }],
       subject,

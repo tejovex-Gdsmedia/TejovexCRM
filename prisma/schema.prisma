@@ -258,6 +258,7 @@
   whatsappPhoneNumberId String  @default("")
   whatsappAccessToken   String  @default("")
   whatsappTemplateName  String  @default("")
+  smtpFromEmail         String  @default("")
 }
 
       enum LeadStatus {
