@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { AppError } from '../middleware/errorhandler';
 import { CreateLeadInput, UpdateLeadInput, UpdateLeadStatusInput } from '../validators/lead.validator';
+import axios from 'axios';
 import { whatsAppService } from './whatsapp.service';
 import { settingsService } from './settings.service';
 
@@ -112,6 +113,44 @@ where: { id, deletedAt: null, createdById: userId },
     } catch (err) {
       // Never block lead creation if WhatsApp fails
       console.error('⚠️ WhatsApp send failed (lead still created):', err);
+    }
+
+    // Email greeting — non-blocking, fires right after lead creation
+    try {
+      const emailSettings = await settingsService.getSettings();
+      const brevoApiKey = process.env.BREVO_API_KEY;
+      const name = lead.contactName || 'there';
+
+      if (lead.email && brevoApiKey && emailSettings.smtpFromEmail) {
+        await axios.post(
+          'https://api.brevo.com/v3/smtp/email',
+          {
+            sender: { name: 'Tejovex', email: emailSettings.smtpFromEmail },
+            to: [{ email: lead.email, name: lead.contactName || 'Customer' }],
+            subject: 'We received your enquiry',
+            htmlContent: `
+              <div style="font-family: Arial, sans-serif; color: #333;">
+                <p>Hi ${name},</p>
+                <p>We have received your enquiry. Our team will get back to you soon.</p>
+                <br/>
+                <p>Best regards,<br/><strong>Team Tejovex</strong></p>
+              </div>
+            `,
+          },
+          {
+            headers: {
+              'api-key': brevoApiKey,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        console.log(`✅ Greeting email sent to ${lead.email}`);
+      } else {
+        console.log('⚠️ Email greeting skipped — missing email/API key/sender config');
+      }
+    } catch (emailErr) {
+      // Never block lead creation if email fails
+      console.error('⚠️ Greeting email failed (lead still created):', emailErr);
     }
 
     return lead;
