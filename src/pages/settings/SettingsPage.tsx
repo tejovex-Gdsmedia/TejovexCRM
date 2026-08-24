@@ -10,6 +10,7 @@ interface CrmSettings {
   whatsappPhoneNumberId: string;
   whatsappAccessToken: string;
   whatsappTemplateName: string;
+    emailEnabled: boolean;
   smtpFromEmail: string;
 }
 
@@ -23,6 +24,7 @@ export default function SettingsPage() {
     whatsappPhoneNumberId: '',
     whatsappAccessToken: '',
     whatsappTemplateName: '',
+        emailEnabled: false,
     smtpFromEmail: '',
   });
   const [loading,          setLoading]          = useState(true);
@@ -63,6 +65,7 @@ export default function SettingsPage() {
     setEmailMessage(null);
     try {
       const res = await axios.patch(`${API}/settings`, {
+        emailEnabled: settings.emailEnabled,
         smtpFromEmail: settings.smtpFromEmail,
       }, getAuthHeaders());
       setSettings(res.data.data);
@@ -190,11 +193,37 @@ export default function SettingsPage() {
 
       {/* Email Sender Card */}
       <div className="bg-white dark:bg-[#1A1D27] rounded-xl border border-gray-200 dark:border-[#2e3245] p-6 space-y-5">
-        <div>
-          <h2 className="text-lg font-medium text-gray-800 dark:text-white">Email Sender</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            The email address leads will receive emails from
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-medium text-gray-800 dark:text-white">Email Auto-Send</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              Automatically send a greeting email when a new lead is created
+            </p>
+          </div>
+          {/* Toggle */}
+          <button
+            onClick={() => setSettings((prev) => ({ ...prev, emailEnabled: !prev.emailEnabled }))}
+            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none ${
+              settings.emailEnabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+            }`}
+          >
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                settings.emailEnabled ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Status indicator */}
+        <div className={`flex items-center gap-2 text-sm ${
+          settings.emailEnabled ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'
+        }`}>
+          {settings.emailEnabled ? (
+            <><Wifi className="w-4 h-4" /> Auto-send is ON — emails will fire on lead creation</>
+          ) : (
+            <><WifiOff className="w-4 h-4" /> Auto-send is OFF</>
+          )}
         </div>
 
         <hr className="border-gray-100 dark:border-[#2e3245]" />
