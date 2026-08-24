@@ -252,15 +252,15 @@
         user       User     @relation(fields: [userId], references: [id])
       }
 
-      model CrmSettings {
+model CrmSettings {
   id                    String  @id @default("global")
   whatsappEnabled       Boolean @default(false)
   whatsappPhoneNumberId String  @default("")
   whatsappAccessToken   String  @default("")
   whatsappTemplateName  String  @default("")
+  emailEnabled          Boolean @default(false)
   smtpFromEmail         String  @default("")
 }
-
       enum LeadStatus {
         NEW
         CONTACTED
