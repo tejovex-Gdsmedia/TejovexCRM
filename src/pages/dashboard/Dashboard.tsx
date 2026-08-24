@@ -45,11 +45,11 @@ interface Stats {
 }
 
 const statusColors: Record<string, string> = {
-  NEW:         "bg-blue-100 text-blue-700",
-  QUALIFIED:   "bg-yellow-100 text-yellow-700",
-  CONTACTED:   "bg-purple-100 text-purple-700",
-  CONVERTED:   "bg-green-100 text-green-700",
-  UNQUALIFIED: "bg-red-100 text-red-700",
+  NEW:         "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  QUALIFIED:   "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
+  CONTACTED:   "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+  CONVERTED:   "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+  UNQUALIFIED: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
 };
 
 const priorityColors: Record<string, string> = {
@@ -144,7 +144,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center py-32">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-yellow-600 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-600 border-t-transparent" />
       </div>
     );
   }
@@ -152,7 +152,9 @@ export default function Dashboard() {
   if (error) {
     return (
       <div className="p-6">
-        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
+        <p className="rounded-lg bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+          {error}
+        </p>
       </div>
     );
   }
@@ -160,103 +162,107 @@ export default function Dashboard() {
   return (
     <div className="p-6 space-y-6">
 
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">Overview</h1>
-        <p className="mt-1 text-sm text-gray-500">Here's what's happening today.</p>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Overview</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Here's what's happening today.</p>
       </div>
 
+      {/* Stat Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 dark:border-[#2e3245] bg-white dark:bg-[#1A1D27] p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Total Contacts</p>
-            <Users size={18} className="text-gray-300" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Total Contacts</p>
+            <Users size={18} className="text-gray-300 dark:text-gray-600" />
           </div>
-          <p className="text-3xl font-bold text-gray-800">{stats?.totalContacts ?? 0}</p>
-          <p className="mt-1 text-xs text-green-600">↑ {stats?.newContactsThisMonth ?? 0} this month</p>
+          <p className="text-3xl font-bold text-gray-800 dark:text-white">{stats?.totalContacts ?? 0}</p>
+          <p className="mt-1 text-xs text-green-600 dark:text-green-400">↑ {stats?.newContactsThisMonth ?? 0} this month</p>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 dark:border-[#2e3245] bg-white dark:bg-[#1A1D27] p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Open Deals</p>
-            <Briefcase size={18} className="text-gray-300" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Open Deals</p>
+            <Briefcase size={18} className="text-gray-300 dark:text-gray-600" />
           </div>
-          <p className="text-3xl font-bold text-gray-800">{formatValue(stats?.openDealsValue)}</p>
-          <p className="mt-1 text-xs text-green-600">↑ {stats?.newDealsThisMonth ?? 0} new deals</p>
+          <p className="text-3xl font-bold text-gray-800 dark:text-white">{formatValue(stats?.openDealsValue)}</p>
+          <p className="mt-1 text-xs text-green-600 dark:text-green-400">↑ {stats?.newDealsThisMonth ?? 0} new deals</p>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 dark:border-[#2e3245] bg-white dark:bg-[#1A1D27] p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Active Leads</p>
-            <Star size={18} className="text-gray-300" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Active Leads</p>
+            <Star size={18} className="text-gray-300 dark:text-gray-600" />
           </div>
-          <p className="text-3xl font-bold text-gray-800">{stats?.activeLeads ?? 0}</p>
-          <p className="mt-1 text-xs text-red-500">↓ {stats?.unqualifiedLeads ?? 0} unqualified</p>
+          <p className="text-3xl font-bold text-gray-800 dark:text-white">{stats?.activeLeads ?? 0}</p>
+          <p className="mt-1 text-xs text-red-500 dark:text-red-400">↓ {stats?.unqualifiedLeads ?? 0} unqualified</p>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 dark:border-[#2e3245] bg-white dark:bg-[#1A1D27] p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Pending Tasks</p>
-            <CheckSquare size={18} className="text-gray-300" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Pending Tasks</p>
+            <CheckSquare size={18} className="text-gray-300 dark:text-gray-600" />
           </div>
-          <p className="text-3xl font-bold text-gray-800">{stats?.pendingTasks ?? 0}</p>
-          <p className="mt-1 text-xs text-gray-500">{stats?.tasksDueToday ?? 0} due today</p>
+          <p className="text-3xl font-bold text-gray-800 dark:text-white">{stats?.pendingTasks ?? 0}</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{stats?.tasksDueToday ?? 0} due today</p>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-  <div className="flex items-center justify-between mb-3">
-    <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Today's Follow-Ups</p>
-  </div>
-  <p className="text-3xl font-bold text-gray-800">{stats?.todayFollowUps ?? 0}</p>
-  <p className="mt-1 text-xs text-gray-500">due today</p>
-</div>
+        <div className="rounded-xl border border-gray-200 dark:border-[#2e3245] bg-white dark:bg-[#1A1D27] p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Today's Follow-Ups</p>
+          </div>
+          <p className="text-3xl font-bold text-gray-800 dark:text-white">{stats?.todayFollowUps ?? 0}</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">due today</p>
+        </div>
 
-<div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-  <div className="flex items-center justify-between mb-3">
-    <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Overdue Follow-Ups</p>
-  </div>
-  <p className="text-3xl font-bold text-gray-800">{stats?.overdueFollowUps ?? 0}</p>
-  <p className="mt-1 text-xs text-red-500">needs attention</p>
-</div>
+        <div className="rounded-xl border border-gray-200 dark:border-[#2e3245] bg-white dark:bg-[#1A1D27] p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Overdue Follow-Ups</p>
+          </div>
+          <p className="text-3xl font-bold text-gray-800 dark:text-white">{stats?.overdueFollowUps ?? 0}</p>
+          <p className="mt-1 text-xs text-red-500 dark:text-red-400">needs attention</p>
+        </div>
 
       </div>
 
+      {/* Bottom panels */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-        <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-800">Recent Leads</h2>
+        {/* Recent Leads */}
+        <div className="lg:col-span-2 rounded-xl border border-gray-200 dark:border-[#2e3245] bg-white dark:bg-[#1A1D27] shadow-sm">
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2e3245]">
+            <h2 className="text-sm font-semibold text-gray-800 dark:text-white">Recent Leads</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Title</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Status</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Source</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Value</th>
+                <tr className="border-b border-gray-100 dark:border-[#2e3245]">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Title</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Status</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Source</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Value</th>
                 </tr>
               </thead>
               <tbody>
                 {recentLeads.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-5 py-8 text-center text-gray-400">No leads yet</td>
+                    <td colSpan={4} className="px-5 py-8 text-center text-gray-400 dark:text-gray-500">No leads yet</td>
                   </tr>
                 ) : (
                   recentLeads.map(lead => (
-                    <tr key={lead.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                      <td className="px-5 py-3 font-medium text-gray-800">{lead.title}</td>
+                    <tr key={lead.id} className="border-b border-gray-50 dark:border-[#2e3245] hover:bg-gray-50 dark:hover:bg-[#1e2235] transition-colors">
+                      <td className="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">{lead.title}</td>
                       <td className="px-5 py-3">
-                        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusColors[lead.status] ?? "bg-gray-100 text-gray-600"}`}>
+                        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusColors[lead.status] ?? "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"}`}>
                           {lead.status}
                         </span>
                       </td>
                       <td className="px-5 py-3">
-                        <span className="rounded border border-gray-200 px-2 py-0.5 text-[11px] text-gray-600">
+                        <span className="rounded border border-gray-200 dark:border-gray-600 px-2 py-0.5 text-[11px] text-gray-600 dark:text-gray-400">
                           {lead.source ?? "—"}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-gray-700">{formatValue(lead.value)}</td>
+                      <td className="px-5 py-3 text-gray-700 dark:text-gray-300">{formatValue(lead.value)}</td>
                     </tr>
                   ))
                 )}
@@ -265,13 +271,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-800">My Tasks</h2>
+        {/* My Tasks */}
+        <div className="rounded-xl border border-gray-200 dark:border-[#2e3245] bg-white dark:bg-[#1A1D27] shadow-sm">
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2e3245]">
+            <h2 className="text-sm font-semibold text-gray-800 dark:text-white">My Tasks</h2>
           </div>
-          <div className="divide-y divide-gray-50 px-5">
+          <div className="divide-y divide-gray-50 dark:divide-[#2e3245] px-5">
             {myTasks.length === 0 ? (
-              <p className="py-8 text-center text-sm text-gray-400">No pending tasks</p>
+              <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">No pending tasks</p>
             ) : (
               myTasks.map(task => (
                 <div key={task.id} className="flex items-start gap-3 py-3">
@@ -291,11 +298,11 @@ export default function Dashboard() {
                         )
                       );
                     }}
-                    className="mt-0.5 h-4 w-4 cursor-pointer rounded border-gray-300 accent-yellow-600"
+                    className="mt-0.5 h-4 w-4 cursor-pointer rounded border-gray-300 dark:border-gray-600 accent-brand-600"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-800 leading-tight truncate">{task.title}</p>
-                    <p className="mt-0.5 text-[11px] text-gray-400">
+                    <p className="text-sm text-gray-800 dark:text-gray-100 leading-tight truncate">{task.title}</p>
+                    <p className="mt-0.5 text-[11px] text-gray-400 dark:text-gray-500">
                       {formatDate(task.dueDate)} ·{" "}
                       <span className={`font-semibold ${priorityColors[task.priority] ?? "text-gray-400"}`}>
                         {task.priority}

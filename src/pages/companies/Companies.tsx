@@ -9,8 +9,8 @@ import axios from "axios";
 const API = "https://tejovexcrm-backend.onrender.com/api/v1";
 const getAuthHeaders = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` } });
 
-const inputCls = "w-full rounded-lg bg-gray-100 px-3 py-2.5 text-sm outline-none ring-1 ring-gray-200 focus:ring-yellow-500 placeholder:text-gray-400 transition-all";
-const labelCls = "text-[11px] font-semibold uppercase tracking-wider text-gray-500";
+const inputCls = "w-full rounded-lg bg-gray-100 dark:bg-[#111318] px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none ring-1 ring-gray-200 dark:ring-[#2e3245] focus:ring-brand-600 transition-all";
+const labelCls = "text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400";
 
 // ── CSV Parser ──
 function parseCSVLine(line: string): string[] {
@@ -77,12 +77,12 @@ function CompanyModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#1A1D27] border border-gray-200 dark:border-[#2e3245] p-6 shadow-xl">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-800">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
             {initial ? "Edit Company" : "Add Company"}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
             <X size={20} />
           </button>
         </div>
@@ -101,13 +101,25 @@ function CompanyModal({
             <input value={industry} onChange={e => setIndustry(e.target.value)} placeholder="e.g. Retail" className={inputCls} />
           </div>
 
-          {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+          {error && (
+            <p className="rounded-lg bg-red-50 dark:bg-red-900/20 px-3 py-2 text-sm text-red-600 dark:text-red-400">
+              {error}
+            </p>
+          )}
 
           <div className="mt-1 flex gap-3">
-            <button type="button" onClick={onClose} className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-lg border border-gray-200 dark:border-[#2e3245] py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e2235] transition-colors"
+            >
               Cancel
             </button>
-            <button type="submit" disabled={saving} className="flex-1 rounded-lg bg-yellow-600 py-2.5 text-sm font-semibold text-white hover:bg-yellow-700 disabled:opacity-60 transition-colors">
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 rounded-lg bg-brand-600 hover:bg-brand-700 py-2.5 text-sm font-semibold text-white disabled:opacity-60 transition-colors"
+            >
               {saving ? "Saving..." : initial ? "Save Changes" : "Add Company"}
             </button>
           </div>
@@ -121,10 +133,12 @@ function CompanyModal({
 function ViewModal({ company, onClose }: { company: Company; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#1A1D27] border border-gray-200 dark:border-[#2e3245] p-6 shadow-xl">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-800">Company Details</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Company Details</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+            <X size={20} />
+          </button>
         </div>
         <div className="flex flex-col gap-3">
           {[
@@ -134,13 +148,16 @@ function ViewModal({ company, onClose }: { company: Company; onClose: () => void
             { label: "Contacts",     value: company._count?.contacts ?? 0 },
             { label: "Deals",        value: company._count?.deals    ?? 0 },
           ].map(({ label, value }) => (
-            <div key={label} className="flex flex-col gap-1 border-b border-gray-100 pb-3 last:border-0">
+            <div key={label} className="flex flex-col gap-1 border-b border-gray-100 dark:border-[#2e3245] pb-3 last:border-0">
               <p className={labelCls}>{label}</p>
-              <p className="text-sm font-medium text-gray-800">{value}</p>
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{value}</p>
             </div>
           ))}
         </div>
-        <button onClick={onClose} className="mt-5 w-full rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+        <button
+          onClick={onClose}
+          className="mt-5 w-full rounded-lg border border-gray-200 dark:border-[#2e3245] py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e2235] transition-colors"
+        >
           Close
         </button>
       </div>
@@ -152,14 +169,25 @@ function ViewModal({ company, onClose }: { company: Company; onClose: () => void
 function DeleteModal({ company, onClose, onConfirm }: { company: Company; onClose: () => void; onConfirm: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-        <h2 className="mb-2 text-lg font-semibold text-gray-800">Delete Company</h2>
-        <p className="text-sm text-gray-500">
-          Are you sure you want to delete <span className="font-semibold text-gray-800">{company.name}</span>? This cannot be undone.
+      <div className="w-full max-w-sm rounded-xl bg-white dark:bg-[#1A1D27] border border-gray-200 dark:border-[#2e3245] p-6 shadow-xl">
+        <h2 className="mb-2 text-lg font-semibold text-gray-800 dark:text-white">Delete Company</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Are you sure you want to delete{" "}
+          <span className="font-semibold text-gray-800 dark:text-white">{company.name}</span>? This cannot be undone.
         </p>
         <div className="mt-5 flex gap-3">
-          <button onClick={onClose} className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
-          <button onClick={onConfirm} className="flex-1 rounded-lg bg-red-500 py-2.5 text-sm font-semibold text-white hover:bg-red-600 transition-colors">Yes, Delete</button>
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-lg border border-gray-200 dark:border-[#2e3245] py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e2235] transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 rounded-lg bg-red-500 hover:bg-red-600 py-2.5 text-sm font-semibold text-white transition-colors"
+          >
+            Yes, Delete
+          </button>
         </div>
       </div>
     </div>
@@ -198,32 +226,24 @@ export default function Companies() {
   const handleEdit   = async (data: CompanyPayload) => { if (!editItem) return; await updateCompany(editItem.id, data); await fetchCompanies(); };
   const handleDelete = async () => { if (!deleteItem) return; await deleteCompany(deleteItem.id); setDeleteItem(null); await fetchCompanies(); };
 
-  // ── Import CSV ──
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (!file.name.endsWith(".csv") && !file.name.endsWith(".txt")) {
       alert("Please upload a .csv file");
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
-
     const text = await file.text();
     const { headers, rows } = parseCSVFile(text);
-
     const nameIdx     = findColumnIndex(headers, "company name", "name", "company", "companyname");
     const websiteIdx  = findColumnIndex(headers, "website", "web");
     const industryIdx = findColumnIndex(headers, "industry");
-    const contactsIdx = findColumnIndex(headers, "contacts");
-    const dealsIdx    = findColumnIndex(headers, "deals");
-
     if (nameIdx === -1) {
       alert(`No valid "Company Name" column found.\n\nYour CSV must have these columns:\n${CSV_COLUMNS.join(", ")}`);
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
-
     const parsed = rows
       .map((row) => ({
         name:     row[nameIdx] || "",
@@ -231,19 +251,16 @@ export default function Companies() {
         industry: industryIdx >= 0 ? row[industryIdx] || "" : "",
       }))
       .filter((c) => c.name);
-
     if (parsed.length === 0) {
       alert("No valid companies found in CSV.");
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
-
     if (parsed.length > 500) {
       alert("Maximum 500 companies per import.");
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
-
     setImporting(true);
     setImportResult(null);
     try {
@@ -258,16 +275,12 @@ export default function Companies() {
     }
   };
 
-  // ── Download Sample CSV ──
   const downloadSampleCSV = () => {
-    const header = CSV_COLUMNS.join(",");
-    const csv = header + "\n";
+    const csv = CSV_COLUMNS.join(",") + "\n";
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = "companies-sample.csv";
-    a.click();
+    a.href = url; a.download = "companies-sample.csv"; a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -275,23 +288,23 @@ export default function Companies() {
     <div className="p-6">
 
       {/* Modals */}
-      {showAdd    && <CompanyModal onClose={() => setShowAdd(false)}   onSave={handleAdd} />}
-      {editItem   && <CompanyModal initial={editItem} onClose={() => setEditItem(null)}   onSave={handleEdit} />}
+      {showAdd    && <CompanyModal onClose={() => setShowAdd(false)} onSave={handleAdd} />}
+      {editItem   && <CompanyModal initial={editItem} onClose={() => setEditItem(null)} onSave={handleEdit} />}
       {viewItem   && <ViewModal   company={viewItem}  onClose={() => setViewItem(null)} />}
       {deleteItem && <DeleteModal company={deleteItem} onClose={() => setDeleteItem(null)} onConfirm={handleDelete} />}
 
       {/* Heading */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Companies</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Companies</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Organisations linked to your contacts and deals.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={downloadSampleCSV}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-[#2e3245] px-3 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e2235] transition-colors"
           >
             <Download size={14} /> Sample CSV
           </button>
@@ -299,26 +312,27 @@ export default function Companies() {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={importing}
-            className="flex items-center gap-1.5 rounded-lg bg-gray-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-700 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg bg-gray-800 dark:bg-[#1A1D27] dark:border dark:border-[#2e3245] px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-700 dark:hover:bg-[#1e2235] disabled:opacity-50 transition-colors"
           >
             <Upload size={14} /> {importing ? "Importing..." : "Import CSV"}
           </button>
           <button
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 rounded-lg bg-yellow-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-yellow-700 transition-colors"
+            className="flex items-center gap-2 rounded-lg bg-brand-600 hover:bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors"
           >
-            <Plus size={15} />
-            Add Company
+            <Plus size={15} /> Add Company
           </button>
         </div>
       </div>
 
       {/* Import Result Banner */}
       {importResult && (
-        <div className="mb-4 flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-          <p className="text-sm text-green-700">
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 px-4 py-3">
+          <p className="text-sm text-green-700 dark:text-green-400">
             ✓ Import complete — <b>{importResult.created}</b> created, <b>{importResult.skipped}</b> skipped
-            {importResult.errors.length > 0 && <span className="ml-1 text-red-500">, {importResult.errors.length} errors</span>}
+            {importResult.errors.length > 0 && (
+              <span className="ml-1 text-red-500">, {importResult.errors.length} errors</span>
+            )}
           </p>
           <button onClick={() => setImportResult(null)} className="ml-4 text-green-500 hover:text-green-700">
             <X size={14} />
@@ -327,50 +341,59 @@ export default function Companies() {
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-[#2e3245] bg-white dark:bg-[#1A1D27] shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-yellow-600 border-t-transparent" />
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-600 border-t-transparent" />
           </div>
         ) : error ? (
-          <div className="py-16 text-center text-sm text-red-500">{error}</div>
+          <div className="py-16 text-center text-sm text-red-500 dark:text-red-400">{error}</div>
         ) : (
           <table className="w-full whitespace-nowrap text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
+              <tr className="border-b border-gray-100 dark:border-[#2e3245] bg-gray-50 dark:bg-[#1A1D27]">
                 {["Company Name", "Website", "Industry", "Contacts", "Deals", "Actions"].map(h => (
-                  <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                  <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-[#2e3245]">
               {companies.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-gray-400">
+                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-gray-400 dark:text-gray-500">
                     No companies yet — click "+ Add Company" to get started.
                   </td>
                 </tr>
               ) : (
                 companies.map(company => (
-                  <tr key={company.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-4 font-semibold text-gray-800">{company.name}</td>
-                    <td className="px-5 py-4 text-gray-500">{company.website || "—"}</td>
-                    <td className="px-5 py-4 text-gray-500">{company.industry || "—"}</td>
-                    <td className="px-5 py-4 text-gray-600">{company._count?.contacts ?? 0}</td>
-                    <td className="px-5 py-4 text-gray-600">
+                  <tr key={company.id} className="hover:bg-gray-50 dark:hover:bg-[#1e2235] transition-colors bg-white dark:bg-[#111318]">
+                    <td className="px-5 py-4 font-semibold text-gray-800 dark:text-gray-100">{company.name}</td>
+                    <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{company.website || "—"}</td>
+                    <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{company.industry || "—"}</td>
+                    <td className="px-5 py-4 text-gray-600 dark:text-gray-300">{company._count?.contacts ?? 0}</td>
+                    <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
                       {(company.wonDealsCount ?? 0) > 0 ? company.wonDealsCount : "—"}
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => setViewItem(company)} className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                        <button
+                          onClick={() => setViewItem(company)}
+                          className="flex items-center gap-1 rounded-lg border border-gray-200 dark:border-[#2e3245] px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e2235] transition-colors"
+                        >
                           <Eye size={13} /> View
                         </button>
-                        <button onClick={() => setEditItem(company)} className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                        <button
+                          onClick={() => setEditItem(company)}
+                          className="flex items-center gap-1 rounded-lg border border-gray-200 dark:border-[#2e3245] px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e2235] transition-colors"
+                        >
                           <Pencil size={13} /> Edit
                         </button>
-                        <button onClick={() => setDeleteItem(company)} className="flex items-center gap-1 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 transition-colors">
+                        <button
+                          onClick={() => setDeleteItem(company)}
+                          className="flex items-center gap-1 rounded-lg border border-red-200 dark:border-red-800 px-3 py-1.5 text-xs font-medium text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        >
                           <Trash2 size={13} /> Delete
                         </button>
                       </div>

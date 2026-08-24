@@ -15,9 +15,11 @@ import FollowUpsPage from "./pages/followups/FollowUpsPage";
 import EmailTemplatesPage from "./pages/emailtemplates/EmailTemplatesPage";
 import Analytics from "./pages/analytics/AnalyticsPage";
 import SettingsPage from "./pages/settings/SettingsPage";
+import { ThemeProvider } from "./context/ThemeContext";
 
 export default function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -45,5 +47,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ThemeProvider>
   );
 }

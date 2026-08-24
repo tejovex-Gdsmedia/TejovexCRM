@@ -3,17 +3,19 @@ import axios from 'axios';
 import { Settings, Wifi, WifiOff } from 'lucide-react';
 
 const API = 'https://tejovexcrm-backend.onrender.com/api/v1';
-
-const getAuthHeaders = () => ({
-  headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-});
+const getAuthHeaders = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
 
 interface CrmSettings {
   whatsappEnabled: boolean;
   whatsappPhoneNumberId: string;
   whatsappAccessToken: string;
   whatsappTemplateName: string;
+  smtpFromEmail: string;
 }
+
+// ── Shared classes ──
+const inputCls = "w-full border border-gray-200 dark:border-[#2e3245] rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#111318] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-600";
+const labelCls = "block text-sm text-gray-600 dark:text-gray-400 mb-1";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<CrmSettings>({
@@ -21,64 +23,88 @@ export default function SettingsPage() {
     whatsappPhoneNumberId: '',
     whatsappAccessToken: '',
     whatsappTemplateName: '',
+    smtpFromEmail: '',
   });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [loading,          setLoading]          = useState(true);
+  const [savingWhatsapp,   setSavingWhatsapp]   = useState(false);
+  const [savingEmail,      setSavingEmail]      = useState(false);
+  const [whatsappMessage,  setWhatsappMessage]  = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [emailMessage,     setEmailMessage]     = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     axios
       .get(`${API}/settings`, getAuthHeaders())
       .then((res) => setSettings(res.data.data))
-      .catch(() => setMessage({ type: 'error', text: 'Failed to load settings' }))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const handleSave = async () => {
-    setSaving(true);
-    setMessage(null);
+  const handleSaveWhatsapp = async () => {
+    setSavingWhatsapp(true);
+    setWhatsappMessage(null);
     try {
-      const res = await axios.patch(`${API}/settings`, settings, getAuthHeaders());
+      const res = await axios.patch(`${API}/settings`, {
+        whatsappEnabled:      settings.whatsappEnabled,
+        whatsappPhoneNumberId: settings.whatsappPhoneNumberId,
+        whatsappAccessToken:  settings.whatsappAccessToken,
+        whatsappTemplateName: settings.whatsappTemplateName,
+      }, getAuthHeaders());
       setSettings(res.data.data);
-      setMessage({ type: 'success', text: 'Settings saved successfully' });
+      setWhatsappMessage({ type: 'success', text: 'WhatsApp settings saved successfully' });
     } catch {
-      setMessage({ type: 'error', text: 'Failed to save settings' });
+      setWhatsappMessage({ type: 'error', text: 'Failed to save WhatsApp settings' });
     } finally {
-      setSaving(false);
+      setSavingWhatsapp(false);
+    }
+  };
+
+  const handleSaveEmail = async () => {
+    setSavingEmail(true);
+    setEmailMessage(null);
+    try {
+      const res = await axios.patch(`${API}/settings`, {
+        smtpFromEmail: settings.smtpFromEmail,
+      }, getAuthHeaders());
+      setSettings(res.data.data);
+      setEmailMessage({ type: 'success', text: 'Email settings saved successfully' });
+    } catch {
+      setEmailMessage({ type: 'error', text: 'Failed to save email settings' });
+    } finally {
+      setSavingEmail(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
-        Loading settings...
+      <div className="flex items-center justify-center h-64">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-600 border-t-transparent" />
       </div>
     );
   }
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
+
+      {/* Page Title */}
       <div className="flex items-center gap-3">
-        <Settings className="w-6 h-6 text-gray-600" />
-        <h1 className="text-2xl font-semibold text-gray-800">CRM Settings</h1>
+        <Settings className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+        <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">CRM Settings</h1>
       </div>
 
-      {/* WhatsApp Auto-Send Card */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+      {/* WhatsApp Card */}
+      <div className="bg-white dark:bg-[#1A1D27] rounded-xl border border-gray-200 dark:border-[#2e3245] p-6 space-y-5">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-medium text-gray-800">WhatsApp Auto-Send</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h2 className="text-lg font-medium text-gray-800 dark:text-white">WhatsApp Auto-Send</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
               Automatically send a WhatsApp message when a new lead is created
             </p>
           </div>
           {/* Toggle */}
           <button
-            onClick={() =>
-              setSettings((prev) => ({ ...prev, whatsappEnabled: !prev.whatsappEnabled }))
-            }
+            onClick={() => setSettings((prev) => ({ ...prev, whatsappEnabled: !prev.whatsappEnabled }))}
             className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none ${
-              settings.whatsappEnabled ? 'bg-green-500' : 'bg-gray-300'
+              settings.whatsappEnabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
             }`}
           >
             <span
@@ -90,7 +116,9 @@ export default function SettingsPage() {
         </div>
 
         {/* Status indicator */}
-        <div className={`flex items-center gap-2 text-sm ${settings.whatsappEnabled ? 'text-green-600' : 'text-gray-400'}`}>
+        <div className={`flex items-center gap-2 text-sm ${
+          settings.whatsappEnabled ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'
+        }`}>
           {settings.whatsappEnabled ? (
             <><Wifi className="w-4 h-4" /> Auto-send is ON — messages will fire on lead creation</>
           ) : (
@@ -98,77 +126,112 @@ export default function SettingsPage() {
           )}
         </div>
 
-        <hr className="border-gray-100" />
+        <hr className="border-gray-100 dark:border-[#2e3245]" />
 
         {/* Credentials */}
         <div className="space-y-4">
-          <p className="text-sm font-medium text-gray-700">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
             WhatsApp API Credentials{' '}
-            <span className="text-gray-400 font-normal">(provided by your Meta admin)</span>
+            <span className="text-gray-400 dark:text-gray-500 font-normal">(provided by your Meta admin)</span>
           </p>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Phone Number ID</label>
+            <label className={labelCls}>Phone Number ID</label>
             <input
               type="text"
               value={settings.whatsappPhoneNumberId}
-              onChange={(e) =>
-                setSettings((prev) => ({ ...prev, whatsappPhoneNumberId: e.target.value }))
-              }
+              onChange={(e) => setSettings((prev) => ({ ...prev, whatsappPhoneNumberId: e.target.value }))}
               placeholder="e.g. 123456789012345"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputCls}
             />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Access Token</label>
+            <label className={labelCls}>Access Token</label>
             <input
               type="password"
               value={settings.whatsappAccessToken}
-              onChange={(e) =>
-                setSettings((prev) => ({ ...prev, whatsappAccessToken: e.target.value }))
-              }
+              onChange={(e) => setSettings((prev) => ({ ...prev, whatsappAccessToken: e.target.value }))}
               placeholder="Permanent system user token"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputCls}
             />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Approved Template Name</label>
+            <label className={labelCls}>Approved Template Name</label>
             <input
               type="text"
               value={settings.whatsappTemplateName}
-              onChange={(e) =>
-                setSettings((prev) => ({ ...prev, whatsappTemplateName: e.target.value }))
-              }
+              onChange={(e) => setSettings((prev) => ({ ...prev, whatsappTemplateName: e.target.value }))}
               placeholder="e.g. lead_welcome_message"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputCls}
             />
           </div>
         </div>
 
-        {/* Message */}
-        {message && (
-          <div
-            className={`text-sm px-4 py-2.5 rounded-lg ${
-              message.type === 'success'
-                ? 'bg-green-50 text-green-700 border border-green-200'
-                : 'bg-red-50 text-red-700 border border-red-200'
-            }`}
-          >
-            {message.text}
+        {whatsappMessage && (
+          <div className={`text-sm px-4 py-2.5 rounded-lg ${
+            whatsappMessage.type === 'success'
+              ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
+              : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+          }`}>
+            {whatsappMessage.text}
           </div>
         )}
 
-        {/* Save */}
         <button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-lg transition-colors"
+          onClick={handleSaveWhatsapp}
+          disabled={savingWhatsapp}
+          className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-lg transition-colors"
         >
-          {saving ? 'Saving...' : 'Save Settings'}
+          {savingWhatsapp ? 'Saving...' : 'Save Settings'}
         </button>
       </div>
+
+      {/* Email Sender Card */}
+      <div className="bg-white dark:bg-[#1A1D27] rounded-xl border border-gray-200 dark:border-[#2e3245] p-6 space-y-5">
+        <div>
+          <h2 className="text-lg font-medium text-gray-800 dark:text-white">Email Sender</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            The email address leads will receive emails from
+          </p>
+        </div>
+
+        <hr className="border-gray-100 dark:border-[#2e3245]" />
+
+        <div>
+          <label className={labelCls}>Sender Email Address</label>
+          <input
+            type="email"
+            value={settings.smtpFromEmail}
+            onChange={(e) => setSettings((prev) => ({ ...prev, smtpFromEmail: e.target.value }))}
+            placeholder="techgdsmedia@gmail.com"
+            className={inputCls}
+          />
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            Must be a verified sender in your Brevo account
+          </p>
+        </div>
+
+        {emailMessage && (
+          <div className={`text-sm px-4 py-2.5 rounded-lg ${
+            emailMessage.type === 'success'
+              ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
+              : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+          }`}>
+            {emailMessage.text}
+          </div>
+        )}
+
+        <button
+          onClick={handleSaveEmail}
+          disabled={savingEmail}
+          className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-lg transition-colors"
+        >
+          {savingEmail ? 'Saving...' : 'Save Email Settings'}
+        </button>
+      </div>
+
     </div>
   );
 }

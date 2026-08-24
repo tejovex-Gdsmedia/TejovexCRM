@@ -14,37 +14,37 @@ export default function Profile() {
 
   return (
     <div className="p-6">
-      <h1 className="mb-6 text-2xl font-bold text-gray-800">My Profile</h1>
+      <h1 className="mb-6 text-2xl font-bold text-gray-800 dark:text-white">My Profile</h1>
 
-      <div className="max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="max-w-md rounded-xl border border-gray-200 dark:border-[#2e3245] bg-white dark:bg-[#1A1D27] p-6 shadow-sm">
 
         {/* Avatar */}
         <div className="mb-5 flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-yellow-500 text-xl font-bold text-white uppercase">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-xl font-bold text-white uppercase">
             {initials || "?"}
           </div>
           <div>
-            <p className="text-lg font-semibold text-gray-800">
+            <p className="text-lg font-semibold text-gray-800 dark:text-white">
               {user?.firstName} {user?.lastName}
             </p>
-            <p className="text-sm text-gray-500">{user?.email}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
           </div>
         </div>
 
         {/* Details */}
         <div className="flex flex-col gap-4">
           {[
-           { label: "First Name", value: user?.firstName },
-          { label: "Last Name",  value: user?.lastName },
-           { label: "Email",      value: user?.email },
-          { label: "Role", value: typeof user?.role === "object" ? (user?.role as any)?.name : user?.role },
-         ...(user?.phone ? [{ label: "Phone", value: user.phone }] : []),
+            { label: "First Name", value: user?.firstName },
+            { label: "Last Name",  value: user?.lastName },
+            { label: "Email",      value: user?.email },
+            { label: "Role", value: typeof user?.role === "object" ? (user?.role as any)?.name : user?.role },
+            ...(user?.phone ? [{ label: "Phone", value: user.phone }] : []),
           ].map(({ label, value }) => (
-            <div key={label} className="flex flex-col gap-1 border-b border-gray-100 pb-3 last:border-0">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+            <div key={label} className="flex flex-col gap-1 border-b border-gray-100 dark:border-[#2e3245] pb-3 last:border-0">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                 {label}
               </p>
-              <p className="text-sm font-medium text-gray-800">{value}</p>
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{value}</p>
             </div>
           ))}
         </div>
@@ -52,7 +52,7 @@ export default function Profile() {
         {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="mt-6 w-full rounded-lg bg-red-500 py-2.5 text-sm font-semibold text-white hover:bg-red-600 transition-colors"
+          className="mt-6 w-full rounded-lg bg-red-500 hover:bg-red-600 py-2.5 text-sm font-semibold text-white transition-colors"
         >
           Logout
         </button>
