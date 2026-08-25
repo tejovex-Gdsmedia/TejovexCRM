@@ -1,23 +1,22 @@
 import prisma from '../config/database';
 
 export class WhatsAppService {
-  async sendTemplateMessage(phone: string, name: string): Promise<void> {
+  async sendTemplateMessage(phone: string, name: string, userId: string): Promise<void> {
     const settings = await prisma.crmSettings.findUnique({
-      where: { id: 'global' },
+      where: { userId },
     });
 
     if (!settings || !settings.whatsappEnabled) return;
 
-    if (
-      !settings.whatsappPhoneNumberId ||
-      !settings.whatsappAccessToken ||
-      !settings.whatsappTemplateName
-    ) {
+if (
+  !settings.phoneNumberId ||
+  !settings.accessToken ||
+  !settings.templateName
+) {
       console.warn('⚠️ WhatsApp credentials not fully configured in Settings');
       return;
     }
 
-    // Strip everything except digits — Meta requires plain digits, no + or spaces
     const formattedPhone = phone.replace(/\D/g, '');
 
     const payload = {
@@ -25,7 +24,7 @@ export class WhatsAppService {
       to: formattedPhone,
       type: 'template',
       template: {
-        name: settings.whatsappTemplateName,
+        name: settings.templateName,
         language: { code: 'en' },
         components: [
           {
@@ -39,12 +38,12 @@ export class WhatsAppService {
     };
 
     const response = await fetch(
-      `https://graph.facebook.com/v18.0/${settings.whatsappPhoneNumberId}/messages`,
+      `https://graph.facebook.com/v18.0/${settings.phoneNumberId}/messages`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${settings.whatsappAccessToken}`,
+          Authorization: `Bearer ${settings.accessToken}`,
         },
         body: JSON.stringify(payload),
       }
