@@ -99,12 +99,13 @@ where: { id, deletedAt: null, createdById: userId },
 
     // WhatsApp auto-send — runs after lead is safely created
     try {
-      const settings = await settingsService.getSettings();
+      const settings = await settingsService.getSettings(createdById);
       if (settings.whatsappEnabled && lead.phone) {
-        await whatsAppService.sendTemplateMessage(
-          lead.phone,
-          lead.contactName || lead.title
-        );
+await whatsAppService.sendTemplateMessage(
+  lead.phone,
+  lead.contactName || lead.title,
+  createdById
+);
         await prisma.lead.update({
           where: { id: lead.id },
           data: { whatsappSentAt: new Date() },
@@ -117,7 +118,7 @@ where: { id, deletedAt: null, createdById: userId },
 
     // Email greeting — non-blocking, fires right after lead creation
     try {
-      const emailSettings = await settingsService.getSettings();
+      const emailSettings = await settingsService.getSettings(createdById);
       const brevoApiKey = process.env.BREVO_API_KEY;
       const name = lead.contactName || 'there';
 

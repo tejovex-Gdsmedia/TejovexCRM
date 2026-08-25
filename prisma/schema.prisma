@@ -43,6 +43,8 @@
       createdContacts   Contact[]  @relation("CreatedContacts")
       createdDeals      Deal[]     @relation("CreatedDeals")
       predictions       Prediction[]
+        crmSettings     CrmSettings?
+
       }
 
       model Company {
@@ -253,13 +255,17 @@
       }
 
 model CrmSettings {
-  id                    String  @id @default("global")
-  whatsappEnabled       Boolean @default(false)
-  whatsappPhoneNumberId String  @default("")
-  whatsappAccessToken   String  @default("")
-  whatsappTemplateName  String  @default("")
-  emailEnabled          Boolean @default(false)
-  smtpFromEmail         String  @default("")
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  whatsappEnabled Boolean  @default(false)
+  phoneNumberId   String?
+  accessToken     String?
+  templateName    String?
+  emailEnabled    Boolean  @default(false)
+  smtpFromEmail   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
       enum LeadStatus {
         NEW
